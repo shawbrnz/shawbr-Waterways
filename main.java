@@ -3,7 +3,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v5 - 4/5
+ * @v6 - 5/5
  * 
  * Need to:
  * 1- GUI,
@@ -33,7 +33,7 @@ public class main extends JFrame implements ActionListener, MouseListener
     //Number of sides on a square
     int squareSides=4;
     //Size of squares
-    int squareSize=10;
+    int squareSize=100;
     //Array of the pipes. Third dimension is the edges
     pipeNode [][] pipesArray=new pipeNode[xSize][ySize];
     //Keeps program running             TEMP
@@ -46,6 +46,7 @@ public class main extends JFrame implements ActionListener, MouseListener
             }
         }
         while (keepRunning){
+            //Old code for text menu
             System.out.println("Where do you want change?");
             String[] data=scanner.nextLine().split(" ");
             int[] pipeLocation=
@@ -53,14 +54,6 @@ public class main extends JFrame implements ActionListener, MouseListener
                     Integer.valueOf(data[1]),
                     Integer.valueOf(data[2])};
             pipesArray[pipeLocation[0]][pipeLocation[1]].swapPipe(pipeLocation[2]);
-            JPanel panel = new JPanel();
-            panel.setPreferredSize(new Dimension(400,400));
-            Canvas myGraphic=new Canvas();
-            panel.add(myGraphic);
-            addMouseListener(this);
-            this.pack();
-            this.toFront(); 
-            this.setVisible(true);
             for(int i=0;i<pipesArray.length;i++){
                 for(int j=0;j<pipesArray[i].length;j++){
                     for(int k=0;k<squareSides;k++){
@@ -74,6 +67,15 @@ public class main extends JFrame implements ActionListener, MouseListener
                 }
                 System.out.println("");
             }
+            JPanel panel = new JPanel();
+            panel.setPreferredSize(new Dimension(400,400));
+            Canvas myGraphic=new Canvas();
+            panel.add(myGraphic);
+            addMouseListener(this);
+            this.setSize((xSize*squareSize)+xOffset,(ySize*squareSize)+yOffset);
+            this.toFront(); 
+            this.setVisible(true);
+            repaint();
         }
     }
 
@@ -81,29 +83,35 @@ public class main extends JFrame implements ActionListener, MouseListener
         super.paint(g);
         Graphics2D g2=(Graphics2D)g;
         for(int i=0;i<pipesArray.length;i++){
-                for(int j=0;j<pipesArray[i].length;j++){
-                    for(int k=0;k<squareSides;k++){
-                        if(pipesArray[i][j].pipeThere(k)){
-                            g2.fillOval((i*squareSize)+k+xOffset,(j*squareSize)+k+yOffset,2,2);
-                        }
+            for(int j=0;j<pipesArray[i].length;j++){
+                for(int k=0;k<squareSides;k++){
+                    if(pipesArray[i][j].pipeThere(k)){
+                        g2.fillOval((i*squareSize)+k+xOffset,(j*squareSize)+k+yOffset,2,2);
                     }
                 }
             }
+        }
     }
-    
+
     //These are required, dispite the fact that they are not used.
     public void actionPerformed(ActionEvent e){System.out.println(e);}
+
     public void mouseExited(MouseEvent e){}
+
     public void mouseEntered(MouseEvent e){}
+
     public void mouseReleased(MouseEvent e){}
+
     public void mousePressed(MouseEvent e){}
-    
+
     public void mouseClicked(MouseEvent e){
         System.out.println(e);
         int xMouse=e.getX()-xOffset;
         int yMouse=e.getY()-yOffset;
         if(xMouse>0&&yMouse>0){
+            //System.out.println("True");
             pipesArray[xMouse/squareSize][yMouse/squareSize].swapPipe(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
+            System.out.println(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
         }
     }
 
@@ -114,14 +122,14 @@ public class main extends JFrame implements ActionListener, MouseListener
     }
     return true;
     }*/
-    
+
     //Returns the side of the square that is clicked, 0 being top, going clockwise, left being 3
     int subSquares(int yClicked, int xClicked, int squareSize){
         //It is possible to make this slightly faster by splitting the left
         //and right up and only checking 1 and 3 once
 
         //TODO- Clean this
-
+        System.out.println("subSquare");
         //Top right
         if(squareSize/2>=xClicked&&squareSize/2>=yClicked){
             if(triangleHitBoxMethod(xClicked-(squareSize/2),-(yClicked))){
@@ -154,7 +162,6 @@ public class main extends JFrame implements ActionListener, MouseListener
                 return 3;
             }
         }
-
         //Should not run, but is required for java. Will be removed after cleaning
         return -1;
     }
