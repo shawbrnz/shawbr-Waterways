@@ -1,0 +1,10 @@
+#BlueJ class context
+comment0.target=pipeNode
+comment0.text=\r\n\ Pipe\ node.\r\n\r\n\ @Brendan\ Shaw\r\n\ @v5\ -\ 4/5\r\n
+comment1.params=
+comment1.target=pipeNode()
+comment2.params=pipe
+comment2.target=boolean\ pipeThere(int)
+comment3.params=pipe
+comment3.target=void\ swapPipe(int)
+numComments=4

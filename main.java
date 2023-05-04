@@ -3,7 +3,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v4 - 1/5
+ * @v5 - 4/5
  * 
  * Need to:
  * 1- GUI,
@@ -15,11 +15,11 @@
 
 //Importing
 import java.util.Scanner;
-import java.awt.*;
 import javax.swing.*;
 import javax.swing.JFrame;   
 import java.awt.Dimension;
 import java.awt.event.*;
+import java.awt.*;
 public class main extends JFrame implements ActionListener, MouseListener
 {
     //Sets up text scanner               TEMP
@@ -30,14 +30,21 @@ public class main extends JFrame implements ActionListener, MouseListener
     //Number of squares
     int xSize=10;
     int ySize=10;
+    //Number of sides on a square
+    int squareSides=4;
     //Size of squares
     int squareSize=10;
     //Array of the pipes. Third dimension is the edges
-    boolean [][][] pipesArray=new boolean[xSize][ySize][4];
+    pipeNode [][] pipesArray=new pipeNode[xSize][ySize];
     //Keeps program running             TEMP
     boolean keepRunning=true;
     public main()
     {
+        for(int i=0;i<pipesArray.length;i++){
+            for(int j=0;j<pipesArray[i].length;j++){
+                pipesArray[i][j]=new pipeNode();
+            }
+        }
         while (keepRunning){
             System.out.println("Where do you want change?");
             String[] data=scanner.nextLine().split(" ");
@@ -45,19 +52,19 @@ public class main extends JFrame implements ActionListener, MouseListener
                 {Integer.valueOf(data[0]),
                     Integer.valueOf(data[1]),
                     Integer.valueOf(data[2])};
-            pipesArray[pipeLocation[0]][pipeLocation[1]][pipeLocation[2]]=
-            !(pipesArray[pipeLocation[0]][pipeLocation[1]][pipeLocation[2]]);
+            pipesArray[pipeLocation[0]][pipeLocation[1]].swapPipe(pipeLocation[2]);
             JPanel panel = new JPanel();
             panel.setPreferredSize(new Dimension(400,400));
             Canvas myGraphic=new Canvas();
             panel.add(myGraphic);
+            addMouseListener(this);
             this.pack();
             this.toFront(); 
             this.setVisible(true);
             for(int i=0;i<pipesArray.length;i++){
                 for(int j=0;j<pipesArray[i].length;j++){
-                    for(int k=0;k<pipesArray[i][j].length;k++){
-                        if(pipesArray[i][j][k]){
+                    for(int k=0;k<squareSides;k++){
+                        if(pipesArray[i][j].pipeThere(k)){
                             System.out.print("i");
                         }else{
                             System.out.print(" ");
@@ -70,29 +77,33 @@ public class main extends JFrame implements ActionListener, MouseListener
         }
     }
 
-    public void actionPerformed(ActionEvent e){
-        String itemClicked=e.getActionCommand();
-
+    public void paint (Graphics g){
+        super.paint(g);
+        Graphics2D g2=(Graphics2D)g;
+        for(int i=0;i<pipesArray.length;i++){
+                for(int j=0;j<pipesArray[i].length;j++){
+                    for(int k=0;k<squareSides;k++){
+                        if(pipesArray[i][j].pipeThere(k)){
+                            g2.fillOval((i*squareSize)+k+xOffset,(j*squareSize)+k+yOffset,2,2);
+                        }
+                    }
+                }
+            }
     }
-
+    
+    //These are required, dispite the fact that they are not used.
+    public void actionPerformed(ActionEvent e){System.out.println(e);}
     public void mouseExited(MouseEvent e){}
-
     public void mouseEntered(MouseEvent e){}
-
     public void mouseReleased(MouseEvent e){}
-
     public void mousePressed(MouseEvent e){}
-
+    
     public void mouseClicked(MouseEvent e){
         System.out.println(e);
         int xMouse=e.getX()-xOffset;
         int yMouse=e.getY()-yOffset;
         if(xMouse>0&&yMouse>0){
-            //Need to clean
-            pipesArray[xMouse/squareSize][yMouse/squareSize]
-            [subSquares(yMouse%squareSize,xMouse%squareSize,squareSize)]=
-            !(pipesArray[xMouse/squareSize][yMouse/squareSize]
-            [subSquares(yMouse%squareSize,xMouse%squareSize,squareSize)]);
+            pipesArray[xMouse/squareSize][yMouse/squareSize].swapPipe(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
         }
     }
 
