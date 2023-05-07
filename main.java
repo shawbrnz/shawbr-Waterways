@@ -3,7 +3,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v6 - 5/5
+ * @v7 - 8/5
  * 
  * Need to:
  * 1- GUI,
@@ -86,7 +86,9 @@ public class main extends JFrame implements ActionListener, MouseListener
             for(int j=0;j<pipesArray[i].length;j++){
                 for(int k=0;k<squareSides;k++){
                     if(pipesArray[i][j].pipeThere(k)){
-                        g2.fillOval((i*squareSize)+k+xOffset,(j*squareSize)+k+yOffset,2,2);
+                        ImageIcon pipeImage=new ImageIcon("pipe"+k+".png");
+                        System.out.println(k);
+                        pipeImage.paintIcon(this,g,(i*squareSize)+xOffset,(j*squareSize)+yOffset);
                     }
                 }
             }
