@@ -3,7 +3,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v7 - 8/5
+ * @vv8 - 15/5
  * 
  * Need to:
  * 1- GUI,
@@ -82,16 +82,36 @@ public class main extends JFrame implements ActionListener, MouseListener
     public void paint (Graphics g){
         super.paint(g);
         Graphics2D g2=(Graphics2D)g;
+        System.out.println("Updated");
         for(int i=0;i<pipesArray.length;i++){
             for(int j=0;j<pipesArray[i].length;j++){
+                boolean squareHere=false;
                 for(int k=0;k<squareSides;k++){
-                    if(pipesArray[i][j].pipeThere(k)){
-                        ImageIcon pipeImage=new ImageIcon("pipe"+k+".png");
-                        System.out.println(k);
-                        pipeImage.paintIcon(this,g,(i*squareSize)+xOffset,(j*squareSize)+yOffset);
+                    if(squareHere){
+                        if(pipesArray[i][j].pipeThere(k)){
+                            ImageIcon pipeImage=new ImageIcon("pipe"+k+".png");
+                            System.out.println(k+","+i+","+j+",true");
+                            pipeImage.paintIcon(this,g,(i*squareSize)+xOffset,(j*squareSize)+yOffset);
+                        }else{
+                            ImageIcon pipeImage=new ImageIcon("nopipe"+k+".png");
+                            System.out.println(k+","+i+","+j+",false");
+                            pipeImage.paintIcon(this,g,(i*squareSize)+xOffset,(j*squareSize)+yOffset);
+                        }
+                    }else if (pipesArray[i][j].pipeThere(k)){
+                        squareHere=true;
+                        k=-1;
                     }
                 }
             }
+        }
+        //Debug lines
+        int xstart=0;
+int width = getWidth();
+    int height = getHeight();
+        for(int i=1;i<=10;i=i++){
+            //Not my debug code
+            xstart = i*(width/10);
+            g.drawLine(xstart, 0, xstart, height);
         }
     }
 
@@ -132,35 +152,47 @@ public class main extends JFrame implements ActionListener, MouseListener
 
         //TODO- Clean this
         System.out.println("subSquare");
-        //Top right
+        //Top left
         if(squareSize/2>=xClicked&&squareSize/2>=yClicked){
-            if(triangleHitBoxMethod(xClicked-(squareSize/2),-(yClicked))){
+            System.out.print("tl");
+            if((xClicked-(squareSize/2)>-(yClicked))){
+                System.out.println("1");
                 return 1;
             }else{
+                System.out.println("0");
                 return 0;
             }
         }
-        //Top left
+        //Top right
         if(squareSize/2<xClicked&&squareSize/2>yClicked){
-            if(triangleHitBoxMethod(xClicked,yClicked)){
+            System.out.print("tr");
+            if((xClicked>yClicked)){
+                System.out.println("0");
                 return 0;
             }else{
+                System.out.println("3");
                 return 3;
             }
         }
-        //Bottom right
+        //Bottom left
         if(squareSize/2>xClicked&&squareSize/2<yClicked){
-            if(triangleHitBoxMethod(xClicked-(squareSize/2),yClicked-(squareSize/2))){
+            System.out.print("bl");
+            if((xClicked-(squareSize/2)>yClicked-(squareSize/2))){
+                System.out.println("1");
                 return 1;
             }else{
+                System.out.println("2");
                 return 2;
             }
         }
-        //Bottom left
+        //Bottom right
         if(squareSize/2<=xClicked&&squareSize/2<=yClicked){
-            if(triangleHitBoxMethod(xClicked,-(yClicked-(squareSize/2)))){
+            System.out.print("br");
+            if((xClicked>-(yClicked-(squareSize/2)))){
+                System.out.println("2");
                 return 2;
             }else{
+                System.out.println("3");
                 return 3;
             }
         }
@@ -168,6 +200,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         return -1;
     }
     //Buttons are squares not triangles, so I have to make my own
+    //Outdated
     boolean triangleHitBoxMethod(int yClicked, int xClicked){
         //Method to find if top or bottom was clicked
         //I don't care if it is clicked on the line because
