@@ -2,7 +2,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v9 - 18/5
+ * @v10 - 19/5
  * 
  * Need to:
  * 1- GUI,
@@ -19,13 +19,13 @@ import javax.swing.JFrame;
 import java.awt.Dimension;
 import java.awt.event.*;
 import java.awt.*;
-public class main extends JFrame implements ActionListener, MouseListener, KeyListener
+public class main extends JFrame implements ActionListener, MouseListener
 {
     //Sets up text scanner               TEMP
     Scanner scanner = new Scanner(System.in);
     //Offset the grid is from the UI
     int xOffset=0;
-    int yOffset=10;
+    int yOffset=50;
     //Number of squares
     int xSize=10;
     int ySize=10;
@@ -42,7 +42,7 @@ public class main extends JFrame implements ActionListener, MouseListener, KeyLi
     public main()
     {
         JPanel panel = new JPanel();
-        panel.setPreferredSize(new Dimension(1000,1000));
+        panel.setPreferredSize(new Dimension(xSize*squareSize+xOffset,ySize*squareSize+yOffset));
         Canvas myGraphic=new Canvas();
         panel.add(myGraphic);
         addMouseListener(this);
@@ -84,7 +84,7 @@ public class main extends JFrame implements ActionListener, MouseListener, KeyLi
     public void paint (Graphics g){
         super.paint(g);
         Graphics2D g2=(Graphics2D)g;
-        System.out.println("Updated");
+        //System.out.println("Updated");
         for(int i=0;i<pipesArray.length;i++){
             for(int j=0;j<pipesArray[i].length;j++){
                 boolean squareHere=false;
@@ -92,11 +92,11 @@ public class main extends JFrame implements ActionListener, MouseListener, KeyLi
                     if(squareHere){
                         if(pipesArray[i][j].pipeThere(k)){
                             ImageIcon pipeImage=new ImageIcon("pipe"+k+".png");
-                            System.out.println(k+","+i+","+j+",true");
+                            //System.out.println(k+","+i+","+j+",true");
                             pipeImage.paintIcon(this,g,(i*squareSize)+xOffset,(j*squareSize)+yOffset);
                         }else{
                             ImageIcon pipeImage=new ImageIcon("nopipe"+k+".png");
-                            System.out.println(k+","+i+","+j+",false");
+                            //System.out.println(k+","+i+","+j+",false");
                             pipeImage.paintIcon(this,g,(i*squareSize)+xOffset,(j*squareSize)+yOffset);
                         }
                     }else if (pipesArray[i][j].pipeThere(k)){
@@ -109,25 +109,17 @@ public class main extends JFrame implements ActionListener, MouseListener, KeyLi
         //Debug lines
         int width = getWidth();
         int height = getHeight();
-        for(int i=1;i<=20;i++){
+        for(int i=0;i<=xSize;i++){
             //Not my debug code
-            g.drawLine(i*(50)+xOffset, 0, i*(50)+xOffset, height);
+            g.drawLine(i*(100)+xOffset, 0, i*(100)+xOffset, height);
         }
-        for(int i=1;i<=20;i++){
+        for(int i=0;i<=ySize;i++){
             //Not my debug code
-            g.drawLine(0, i*(50)+yOffset, width, i*(50)+yOffset);
+            g.drawLine(0, i*(100)+yOffset, width, i*(100)+yOffset);
         }
     }
-
-    public void keyPressed(KeyEvent e){    
-        System.out.println(e.getKeyCode());
-    } 
     //These are required, dispite the fact that they are not used.
     public void actionPerformed(ActionEvent e){}
-
-    public void keyReleased(KeyEvent e){System.out.println(e.getKeyCode());}
-
-    public void keyTyped(KeyEvent e){System.out.println(e.getKeyCode());}
 
     public void mouseExited(MouseEvent e){}
 
@@ -135,7 +127,6 @@ public class main extends JFrame implements ActionListener, MouseListener, KeyLi
 
     public void mouseReleased(MouseEvent e){
         currentClick=false;
-        System.out.println("Falsify");
     }
 
     public void mousePressed(MouseEvent e){
@@ -146,7 +137,6 @@ public class main extends JFrame implements ActionListener, MouseListener, KeyLi
                 //System.out.println("True");
                 pipesArray[xMouse/squareSize][yMouse/squareSize].swapPipe(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
                 System.out.println(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
-
             }
             JPanel panel = new JPanel();
             panel.setPreferredSize(new Dimension(1000,1000));
@@ -159,9 +149,11 @@ public class main extends JFrame implements ActionListener, MouseListener, KeyLi
             repaint();
             currentClick=true;
         }
-        else{System.out.println("Truifty");}
     }
+
     //Not using this function as it is bad
+
+    //Ok, why it is bad is because it runs mutliple times
     public void mouseClicked(MouseEvent e){}
 
     /*    !
@@ -178,57 +170,36 @@ public class main extends JFrame implements ActionListener, MouseListener, KeyLi
         //and right up and only checking 1 and 3 once
 
         //TODO- Clean this
-        System.out.println("subSquare");
-        System.out.println(squareSize);
+
         //Top left
         if(squareSize/2>=xClicked&&squareSize/2>=yClicked){
-            System.out.println("tl");
-            System.out.println(xClicked);
-            System.out.println(yClicked);
             if((xClicked>(yClicked))){
-                System.out.println("0");
                 return 0;
             }else{
-                System.out.println("1");
                 return 3;
             }
         }
         //Top right
         if(squareSize/2<xClicked&&squareSize/2>yClicked){
-            System.out.println("tr");
-            System.out.println(xClicked);
-            System.out.println(yClicked);
             if((xClicked-(squareSize/2)<(squareSize/2)-yClicked)){
-                System.out.println("0");
                 return 0;
             }else{
-                System.out.println("1");
                 return 1;
             }
         }
         //Bottom left
         if(squareSize/2>xClicked&&squareSize/2<yClicked){
-            System.out.println("bl");
-            System.out.println(xClicked);
-            System.out.println(yClicked);
             if((xClicked>-yClicked+2*(squareSize/2))){
-                System.out.println("2");
                 return 2;
             }else{
-                System.out.println("3");
                 return 3;
             }
         }
         //Bottom right
         if(squareSize/2<=xClicked&&squareSize/2<=yClicked){
-            System.out.println("br");
-            System.out.println(xClicked);
-            System.out.println(yClicked);
             if((xClicked-(squareSize/2)>(yClicked-(squareSize/2)))){
-                System.out.println("1");
                 return 1;
             }else{
-                System.out.println("2");
                 return 2;
             }
         }
