@@ -2,7 +2,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v10 - 19/5
+ * @v11 - 22/5
  * 
  * Need to:
  * 1- GUI,
@@ -38,7 +38,8 @@ public class main extends JFrame implements ActionListener, MouseListener
     //Keeps program running             TEMP
     boolean keepRunning=true;
     //To ensure it only runs once if clicked             TEMP
-    boolean currentClick=false;
+    boolean currentLeftClick=false;
+    boolean currentRightClick=false;
     public main()
     {
         JPanel panel = new JPanel();
@@ -84,6 +85,8 @@ public class main extends JFrame implements ActionListener, MouseListener
     public void paint (Graphics g){
         super.paint(g);
         Graphics2D g2=(Graphics2D)g;
+        int width = getWidth();
+        int height = getHeight();
         //System.out.println("Updated");
         for(int i=0;i<pipesArray.length;i++){
             for(int j=0;j<pipesArray[i].length;j++){
@@ -106,16 +109,12 @@ public class main extends JFrame implements ActionListener, MouseListener
                 }
             }
         }
-        //Debug lines
-        int width = getWidth();
-        int height = getHeight();
+        //Grid
         for(int i=0;i<=xSize;i++){
-            //Not my debug code
-            g.drawLine(i*(100)+xOffset, 0, i*(100)+xOffset, height);
+            g.drawLine(i*(squareSize)+xOffset, 0, i*(squareSize)+xOffset, ySize*squareSize+yOffset);
         }
         for(int i=0;i<=ySize;i++){
-            //Not my debug code
-            g.drawLine(0, i*(100)+yOffset, width, i*(100)+yOffset);
+            g.drawLine(0, i*(squareSize)+yOffset, xSize*squareSize+xOffset, i*(squareSize)+yOffset);
         }
     }
     //These are required, dispite the fact that they are not used.
@@ -126,28 +125,37 @@ public class main extends JFrame implements ActionListener, MouseListener
     public void mouseEntered(MouseEvent e){}
 
     public void mouseReleased(MouseEvent e){
-        currentClick=false;
+        if(e.getButton() == MouseEvent.BUTTON1){currentLeftClick=false;}
+        else if(e.getButton() == MouseEvent.BUTTON2){currentRightClick=false;}
     }
 
     public void mousePressed(MouseEvent e){
-        if(!currentClick){
-            int xMouse=e.getX()-xOffset;
-            int yMouse=e.getY()-yOffset;
-            if(xMouse>0&&yMouse>0){
-                //System.out.println("True");
-                pipesArray[xMouse/squareSize][yMouse/squareSize].swapPipe(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
-                System.out.println(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
+        if(e.getButton() == MouseEvent.BUTTON1){
+            if(!currentLeftClick){
+                int xMouse=e.getX()-xOffset;
+                int yMouse=e.getY()-yOffset;
+                if(xMouse>0&&yMouse>0){
+                    //System.out.println("True");
+                    pipesArray[xMouse/squareSize][yMouse/squareSize].swapPipe(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
+                    System.out.println(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
+                }
+                JPanel panel = new JPanel();
+                panel.setPreferredSize(new Dimension(1000,1000));
+                Canvas myGraphic=new Canvas();
+                panel.add(myGraphic);
+                addMouseListener(this);
+                this.setSize((xSize*squareSize)+xOffset,(ySize*squareSize)+yOffset);
+                this.toFront(); 
+                this.setVisible(true);
+                repaint();
+                currentLeftClick=true;
             }
-            JPanel panel = new JPanel();
-            panel.setPreferredSize(new Dimension(1000,1000));
-            Canvas myGraphic=new Canvas();
-            panel.add(myGraphic);
-            addMouseListener(this);
-            this.setSize((xSize*squareSize)+xOffset,(ySize*squareSize)+yOffset);
-            this.toFront(); 
-            this.setVisible(true);
-            repaint();
-            currentClick=true;
+        }
+        else if (e.getButton() == MouseEvent.BUTTON2){
+            if(!currentRightClick){
+                //flood();
+                currentRightClick=true;
+            }
         }
     }
 
