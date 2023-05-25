@@ -2,12 +2,11 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v13 - 25/5
+ * @v14 - 26/5
  * 
  * Need to:
- * 1- GUI,
- * CLEAN UP!
- * 2- Clean changing system,
+ * 2- GUI,
+ * 1- CLEAN UP!
  * 3- Water,
  * 4- File stuff
  */
@@ -21,33 +20,31 @@ import java.awt.event.*;
 import java.awt.*;
 public class main extends JFrame implements ActionListener, MouseListener
 {
-    //Sets up text scanner               TEMP
-    Scanner scanner = new Scanner(System.in);
     //Offset the grid is from the UI
-    int xOffset=0;
-    int yOffset=50;
+    final int X_OFFSET=0;
+    final int Y_OFFSET=50;
+    //Number of sides on a square (No magic numbers)
+    final int SQUARE_SIDES=4;
+    
+    //Initalising varibles. Note these are not finals as I plan for the user to be able to modify these
+    //Size of squares
+    int squareSize=100;
     //Number of squares
     int xSize=10;
     int ySize=10;
-    //Number of sides on a square
-    int squareSides=4;
-    //Size of squares
-    int squareSize=100;
     //Array of the pipes. Third dimension is the edges
     pipeNode [][] pipesArray=new pipeNode[xSize][ySize];
-    //Keeps program running             TEMP
-    boolean keepRunning=true;
     //To ensure it only runs once if clicked             TEMP
     boolean currentLeftClick=false;
     boolean currentRightClick=false;
     public main()
     {
         JPanel panel = new JPanel();
-        panel.setPreferredSize(new Dimension(xSize*squareSize+xOffset,ySize*squareSize+yOffset));
+        panel.setPreferredSize(new Dimension(xSize*squareSize+X_OFFSET,ySize*squareSize+Y_OFFSET));
         Canvas myGraphic=new Canvas();
         panel.add(myGraphic);
         addMouseListener(this);
-        this.setSize((xSize*squareSize)+xOffset,(ySize*squareSize)+yOffset);
+        this.setSize((xSize*squareSize)+X_OFFSET,(ySize*squareSize)+Y_OFFSET);
         this.toFront(); 
         this.setVisible(true);
         repaint();
@@ -60,7 +57,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         for(int i=0;i<pipesArray.length;i++){
             for(int j=0;j<pipesArray[i].length;j++){
                 System.out.println("Annoyed");
-                int[] adjacentLocations=new int[squareSides];
+                int[] adjacentLocations=new int[SQUARE_SIDES];
                 //Not using switch because they are bad. (They dont allow variables)
                 //Edges loop around because it is much easier to code 
                 if(i==0){
@@ -88,30 +85,6 @@ public class main extends JFrame implements ActionListener, MouseListener
                 pipesArray[i][j].setAdjacentPipeNode(adjacentPipes);
             }
         }
-        while (keepRunning){
-            //Old code for text menu
-            /*System.out.println("Where do you want change?");
-            String[] data=scanner.nextLine().split(" ");
-            int[] pipeLocation=
-            {Integer.valueOf(data[0]),
-            Integer.valueOf(data[1]),
-            Integer.valueOf(data[2])};
-            pipesArray[pipeLocation[0]][pipeLocation[1]].swapPipe(pipeLocation[2]);
-            for(int i=0;i<pipesArray.length;i++){
-            for(int j=0;j<pipesArray[i].length;j++){
-            for(int k=0;k<squareSides;k++){
-            if(pipesArray[i][j].pipeThere(k)){
-            System.out.print("i");
-            }else{
-            System.out.print(" ");
-            }
-            }
-            System.out.print("|");
-            }
-            System.out.println("");
-            }*/
-
-        }
     }
 
     public void paint (Graphics g){
@@ -119,24 +92,21 @@ public class main extends JFrame implements ActionListener, MouseListener
         Graphics2D g2=(Graphics2D)g;
         int width = getWidth();
         int height = getHeight();
-        //System.out.println("Updated");
         for(int i=0;i<pipesArray.length;i++){
             for(int j=0;j<pipesArray[i].length;j++){
                 boolean squareHere=false;
-                for(int k=0;k<squareSides;k++){
+                for(int k=0;k<SQUARE_SIDES;k++){
                     if(pipesArray[i][j].isWaterHere()){
                         ImageIcon pipeImage=new ImageIcon("DebugWater.png");
-                        pipeImage.paintIcon(this,g,(i*squareSize)+xOffset,(j*squareSize)+yOffset);
+                        pipeImage.paintIcon(this,g,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET);
                     }
                     if(squareHere){
                         if(pipesArray[i][j].pipeThere(k)){
                             ImageIcon pipeImage=new ImageIcon("pipe"+k+".png");
-                            //System.out.println(k+","+i+","+j+",true");
-                            pipeImage.paintIcon(this,g,(i*squareSize)+xOffset,(j*squareSize)+yOffset);
+                            pipeImage.paintIcon(this,g,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET);
                         }else{
                             ImageIcon pipeImage=new ImageIcon("nopipe"+k+".png");
-                            //System.out.println(k+","+i+","+j+",false");
-                            pipeImage.paintIcon(this,g,(i*squareSize)+xOffset,(j*squareSize)+yOffset);
+                            pipeImage.paintIcon(this,g,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET);
                         }
                     }else if (pipesArray[i][j].pipeThere(k)){
                         squareHere=true;
@@ -147,10 +117,11 @@ public class main extends JFrame implements ActionListener, MouseListener
         }
         //Grid
         for(int i=0;i<=xSize;i++){
-            g.drawLine(i*(squareSize)+xOffset, 0, i*(squareSize)+xOffset, ySize*squareSize+yOffset);
+            g.drawLine(i*(squareSize)+X_OFFSET, 0, i*(squareSize)+X_OFFSET, ySize*squareSize+Y_OFFSET);
         }
+        //Has to be done twice due to the chance of differing y and x sizes
         for(int i=0;i<=ySize;i++){
-            g.drawLine(0, i*(squareSize)+yOffset, xSize*squareSize+xOffset, i*(squareSize)+yOffset);
+            g.drawLine(0, i*(squareSize)+Y_OFFSET, xSize*squareSize+X_OFFSET, i*(squareSize)+Y_OFFSET);
         }
     }
     //These are required, dispite the fact that they are not used.
@@ -166,8 +137,8 @@ public class main extends JFrame implements ActionListener, MouseListener
     }
 
     public void mousePressed(MouseEvent e){
-        int xMouse=e.getX()-xOffset;
-        int yMouse=e.getY()-yOffset;
+        int xMouse=e.getX()-X_OFFSET;
+        int yMouse=e.getY()-Y_OFFSET;
         pipeNode selectedNode=pipesArray[xMouse/squareSize][yMouse/squareSize];
         //Left click
         if(e.getButton() == MouseEvent.BUTTON1){
@@ -182,7 +153,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                 Canvas myGraphic=new Canvas();
                 panel.add(myGraphic);
                 addMouseListener(this);
-                this.setSize((xSize*squareSize)+xOffset,(ySize*squareSize)+yOffset);
+                this.setSize((xSize*squareSize)+X_OFFSET,(ySize*squareSize)+Y_OFFSET);
                 this.toFront(); 
                 this.setVisible(true);
                 repaint();
@@ -200,7 +171,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                 Canvas myGraphic=new Canvas();
                 panel.add(myGraphic);
                 addMouseListener(this);
-                this.setSize((xSize*squareSize)+xOffset,(ySize*squareSize)+yOffset);
+                this.setSize((xSize*squareSize)+X_OFFSET,(ySize*squareSize)+Y_OFFSET);
                 this.toFront(); 
                 this.setVisible(true);
                 repaint();
@@ -210,17 +181,8 @@ public class main extends JFrame implements ActionListener, MouseListener
     }
 
     //Not using this function as it is bad
-
     //Ok, why it is bad is because it runs mutliple times
     public void mouseClicked(MouseEvent e){}
-
-    /*    !
-    boolean swap(boolean swapper){
-    if(swapper){
-    return false;
-    }
-    return true;
-    }*/
 
     //Returns the side of the square that is clicked, 0 being top, going clockwise, left being 3
     int subSquares(int yClicked, int xClicked, int squareSize){

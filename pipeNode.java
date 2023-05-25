@@ -3,16 +3,18 @@
  * Pipe node.
  *
  * @Brendan Shaw
- * @v13 - 25/5
+ * @v14 - 26/5
  */
 public class pipeNode
 {
-    private boolean[] pipes=new boolean[4];
+    //Number of sides on a square (No magic numbers)
+    final int SQUARE_SIDES=4;
+    private boolean[] pipes=new boolean[SQUARE_SIDES];
     private boolean waterHere=false;
     private int name;
-    private pipeNode[] adjacentPipes=new pipeNode[4];
+    private pipeNode[] adjacentPipes=new pipeNode[SQUARE_SIDES];
     public void setAdjacentPipeNode(pipeNode[] adjaceneNodes){
-        for(int i=0; i<4; i++){
+        for(int i=0; i<SQUARE_SIDES; i++){
             adjacentPipes[i]=adjaceneNodes[i];
         }
     }
@@ -26,7 +28,7 @@ public class pipeNode
     }
 
     public boolean pipeThere(){
-        for(int i=0; i<4; i++){
+        for(int i=0; i<SQUARE_SIDES; i++){
             if(pipes[i]){
                 return true;
             }
@@ -43,16 +45,16 @@ public class pipeNode
     }
 
     public void flood(boolean isWater){
-        boolean continuation=false;
+        boolean sendWaterChange=false;
         if(!waterHere&&isWater){
-            continuation=true;
+            sendWaterChange=true;
             waterHere=true;
         }else if(waterHere&&!isWater){
-            continuation=true;
+            sendWaterChange=true;
             waterHere=false;
         }
-        if(continuation){
-            for(int i=0; i<4; i++){
+        if(sendWaterChange){
+            for(int i=0; i<SQUARE_SIDES; i++){
                 if(pipes[i]){
                     System.out.println(i);
                     if (adjacentNodeHasPipe(i)){
@@ -68,7 +70,7 @@ public class pipeNode
     }
 
     public boolean adjacentNodeHasPipe(int side){
-        if(((side>1)&&(adjacentPipes[side].pipeThere(side-2)))||((side<2)&&(adjacentPipes[side].pipeThere(side+2)))){
+        if(((side>((SQUARE_SIDES/2)-1))&&(adjacentPipes[side].pipeThere(side-(SQUARE_SIDES/2))))||((side<(SQUARE_SIDES/2))&&(adjacentPipes[side].pipeThere(side+(SQUARE_SIDES/2))))){
             return true;
         }
         return false;
