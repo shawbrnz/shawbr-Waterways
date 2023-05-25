@@ -2,7 +2,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v12 - 25/5
+ * @v13 - 25/5
  * 
  * Need to:
  * 1- GUI,
@@ -54,6 +54,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         for(int i=0;i<pipesArray.length;i++){
             for(int j=0;j<pipesArray[i].length;j++){
                 pipesArray[i][j]=new pipeNode();
+                pipesArray[i][j].giveName((j*10)+i);
             }
         }
         for(int i=0;i<pipesArray.length;i++){
@@ -61,7 +62,29 @@ public class main extends JFrame implements ActionListener, MouseListener
                 System.out.println("Annoyed");
                 int[] adjacentLocations=new int[squareSides];
                 //Not using switch because they are bad. (They dont allow variables)
-                pipeNode[] adjacentPipes={pipesArray[i-1][j],pipesArray[i][j+1],pipesArray[i+1][j],pipesArray[i][j-1]};
+                //Edges loop around because it is much easier to code 
+                if(i==0){
+                    adjacentLocations[1]=xSize-1;
+                    adjacentLocations[0]=i+1;
+                }else if(i==xSize-1){
+                    adjacentLocations[1]=i-1;
+                    adjacentLocations[0]=0;
+                }else{
+                    adjacentLocations[1]=i-1;
+                    adjacentLocations[0]=i+1;
+                }
+                //Same thing repeated for j
+                if(j==0){
+                    adjacentLocations[3]=ySize-1;
+                    adjacentLocations[2]=j+1;
+                }else if(j==ySize-1){
+                    adjacentLocations[3]=j-1;
+                    adjacentLocations[2]=0;
+                }else{
+                    adjacentLocations[3]=j-1;
+                    adjacentLocations[2]=j+1;
+                }
+                pipeNode[] adjacentPipes={pipesArray[i][adjacentLocations[3]],pipesArray[adjacentLocations[0]][j],pipesArray[i][adjacentLocations[2]],pipesArray[adjacentLocations[1]][j]};
                 pipesArray[i][j].setAdjacentPipeNode(adjacentPipes);
             }
         }
@@ -143,16 +166,16 @@ public class main extends JFrame implements ActionListener, MouseListener
     }
 
     public void mousePressed(MouseEvent e){
+        int xMouse=e.getX()-xOffset;
+        int yMouse=e.getY()-yOffset;
+        pipeNode selectedNode=pipesArray[xMouse/squareSize][yMouse/squareSize];
         //Left click
         if(e.getButton() == MouseEvent.BUTTON1){
-            System.out.println(e.getButton());
             if(!currentLeftClick){
-                int xMouse=e.getX()-xOffset;
-                int yMouse=e.getY()-yOffset;
                 if(xMouse>0&&yMouse>0){
-                    //System.out.println("True");
-                    pipesArray[xMouse/squareSize][yMouse/squareSize].swapPipe(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
-                    //System.out.println(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
+                    int side=subSquares(yMouse%squareSize,xMouse%squareSize,squareSize);
+                    selectedNode.swapPipe(side);
+                    selectedNode.floodNodeIfShouldBe(side);
                 }
                 JPanel panel = new JPanel();
                 panel.setPreferredSize(new Dimension(1000,1000));
@@ -168,12 +191,9 @@ public class main extends JFrame implements ActionListener, MouseListener
         }
         //Right click
         else if (e.getButton() == MouseEvent.BUTTON3){
-            System.out.println(e.getButton());
             if(!currentRightClick){
-                int xMouse=e.getX()-xOffset;
-                int yMouse=e.getY()-yOffset;
-                if(xMouse>0&&yMouse>0&&pipesArray[xMouse/squareSize][yMouse/squareSize].pipeThere()){
-                    pipesArray[xMouse/squareSize][yMouse/squareSize].flood();
+                if(xMouse>0&&yMouse>0&&selectedNode.pipeThere()){
+                    selectedNode.flood(!selectedNode.isWaterHere());
                 }
                 JPanel panel = new JPanel();
                 panel.setPreferredSize(new Dimension(1000,1000));
@@ -243,15 +263,5 @@ public class main extends JFrame implements ActionListener, MouseListener
         }
         //Should not run, but is required for java. Will be removed after cleaning
         return -1;
-    }
-    //Buttons are squares not triangles, so I have to make my own
-    //Outdated
-    boolean triangleHitBoxMethod(int yClicked, int xClicked){
-        //Method to find if top or bottom was clicked
-        //I don't care if it is clicked on the line because
-        //user likely won't notice unless they go out of their 
-        //way, does not break, just returns false, which is 1
-        //pixel off of the area that is meant to return false
-        return xClicked>yClicked;
     }
 }

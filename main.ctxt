@@ -2,8 +2,6 @@
 comment0.target=main
 comment1.params=
 comment1.target=main()
-comment10.params=yClicked\ xClicked
-comment10.target=boolean\ triangleHitBoxMethod(int,\ int)
 comment2.params=g
 comment2.target=void\ paint(java.awt.Graphics)
 comment3.params=e
@@ -21,4 +19,4 @@ comment8.target=void\ mouseClicked(java.awt.event.MouseEvent)
 comment9.params=yClicked\ xClicked\ squareSize
 comment9.target=int\ subSquares(int,\ int,\ int)
 comment9.text=\ \ \ \ \!\r\n\ \ \ \ boolean\ swap(boolean\ swapper){\r\n\ \ \ \ if(swapper){\r\n\ \ \ \ return\ false;\r\n\ \ \ \ }\r\n\ \ \ \ return\ true;\r\n}
-numComments=11
+numComments=10

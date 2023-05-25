@@ -3,17 +3,26 @@
  * Pipe node.
  *
  * @Brendan Shaw
- * @v12 - 25/5
+ * @v13 - 25/5
  */
 public class pipeNode
 {
     private boolean[] pipes=new boolean[4];
     private boolean waterHere=false;
+    private int name;
     private pipeNode[] adjacentPipes=new pipeNode[4];
     public void setAdjacentPipeNode(pipeNode[] adjaceneNodes){
         for(int i=0; i<4; i++){
             adjacentPipes[i]=adjaceneNodes[i];
         }
+    }
+
+    public void giveName(int givenName){
+        name=givenName;
+    }
+
+    public int whatName(){
+        return(name);
     }
 
     public boolean pipeThere(){
@@ -24,7 +33,7 @@ public class pipeNode
         }
         return false;
     }
-    
+
     public boolean pipeThere(int pipe){
         return pipes[pipe];
     }
@@ -32,58 +41,46 @@ public class pipeNode
     public void swapPipe(int pipe){
         pipes[pipe]=!pipes[pipe];
     }
-    //Omnidirectional flooding. Note does not flood itself
-    public void flood(){
-        waterHere=true;
-        for(int i=0; i<4; i++){
-            System.out.println("Pipe"+i);
-            System.out.println(pipes[i]);
-            if(pipes[i]){
-                System.out.println("Pipeblank");
-                if(i+2>3){
-                    System.out.println("AttemptedSent");
-                    System.out.println(adjacentPipes[i].pipeThere());
-                    adjacentPipes[i].flood(i-2);
-                    System.out.println("Sent");
-                }else{
-                    System.out.println("AttemptedSent");
-                    System.out.println(adjacentPipes[i].pipeThere());
-                    adjacentPipes[i].flood(i+2);
-                    System.out.println("Sent");
-                }
-                System.out.println("I is"+i);
-            }
+
+    public void flood(boolean isWater){
+        boolean continuation=false;
+        if(!waterHere&&isWater){
+            continuation=true;
+            waterHere=true;
+        }else if(waterHere&&!isWater){
+            continuation=true;
+            waterHere=false;
         }
-    }
-    //Floods depending on intput
-    public void flood(int input){
-        System.out.println("Received");
-        if(pipes[input]){
-            System.out.println("Tested");
-            if(!waterHere){
-                System.out.println("Watertest");
-                waterHere=true;
-                for(int i=0; i<4; i++){
-                    System.out.println("Spagetti enter");
-                    if(pipes[i]){
-                        if(i+2>3){
-                            adjacentPipes[i].flood(i-2);
-                            System.out.println("Sent");
-                        }else{
-                            adjacentPipes[i].flood(i+2);
-                            System.out.println("Sent");
-                        }
+        if(continuation){
+            for(int i=0; i<4; i++){
+                if(pipes[i]){
+                    System.out.println(i);
+                    if (adjacentNodeHasPipe(i)){
+                        adjacentPipes[i].flood(isWater);
                     }
                 }
             }
         }
     }
 
-    public void dry(){
-        waterHere=false;
-    }
-
     public boolean isWaterHere(){
         return waterHere;
+    }
+
+    public boolean adjacentNodeHasPipe(int side){
+        if(((side>1)&&(adjacentPipes[side].pipeThere(side-2)))||((side<2)&&(adjacentPipes[side].pipeThere(side+2)))){
+            return true;
+        }
+        return false;
+    }
+
+    public void floodNodeIfShouldBe(int side){
+        if(adjacentNodeHasPipe(side)){
+            if(adjacentPipes[side].isWaterHere()){
+                flood(true);
+            }else if(waterHere){
+                adjacentPipes[side].flood(true);
+            }
+        }
     }
 }
