@@ -2,7 +2,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v11 - 22/5
+ * @v12 - 25/5
  * 
  * Need to:
  * 1- GUI,
@@ -56,6 +56,15 @@ public class main extends JFrame implements ActionListener, MouseListener
                 pipesArray[i][j]=new pipeNode();
             }
         }
+        for(int i=0;i<pipesArray.length;i++){
+            for(int j=0;j<pipesArray[i].length;j++){
+                System.out.println("Annoyed");
+                int[] adjacentLocations=new int[squareSides];
+                //Not using switch because they are bad. (They dont allow variables)
+                pipeNode[] adjacentPipes={pipesArray[i-1][j],pipesArray[i][j+1],pipesArray[i+1][j],pipesArray[i][j-1]};
+                pipesArray[i][j].setAdjacentPipeNode(adjacentPipes);
+            }
+        }
         while (keepRunning){
             //Old code for text menu
             /*System.out.println("Where do you want change?");
@@ -92,6 +101,10 @@ public class main extends JFrame implements ActionListener, MouseListener
             for(int j=0;j<pipesArray[i].length;j++){
                 boolean squareHere=false;
                 for(int k=0;k<squareSides;k++){
+                    if(pipesArray[i][j].isWaterHere()){
+                        ImageIcon pipeImage=new ImageIcon("DebugWater.png");
+                        pipeImage.paintIcon(this,g,(i*squareSize)+xOffset,(j*squareSize)+yOffset);
+                    }
                     if(squareHere){
                         if(pipesArray[i][j].pipeThere(k)){
                             ImageIcon pipeImage=new ImageIcon("pipe"+k+".png");
@@ -126,18 +139,20 @@ public class main extends JFrame implements ActionListener, MouseListener
 
     public void mouseReleased(MouseEvent e){
         if(e.getButton() == MouseEvent.BUTTON1){currentLeftClick=false;}
-        else if(e.getButton() == MouseEvent.BUTTON2){currentRightClick=false;}
+        else if(e.getButton() == MouseEvent.BUTTON3){currentRightClick=false;}
     }
 
     public void mousePressed(MouseEvent e){
+        //Left click
         if(e.getButton() == MouseEvent.BUTTON1){
+            System.out.println(e.getButton());
             if(!currentLeftClick){
                 int xMouse=e.getX()-xOffset;
                 int yMouse=e.getY()-yOffset;
                 if(xMouse>0&&yMouse>0){
                     //System.out.println("True");
                     pipesArray[xMouse/squareSize][yMouse/squareSize].swapPipe(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
-                    System.out.println(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
+                    //System.out.println(subSquares(yMouse%squareSize,xMouse%squareSize,squareSize));
                 }
                 JPanel panel = new JPanel();
                 panel.setPreferredSize(new Dimension(1000,1000));
@@ -151,9 +166,24 @@ public class main extends JFrame implements ActionListener, MouseListener
                 currentLeftClick=true;
             }
         }
-        else if (e.getButton() == MouseEvent.BUTTON2){
+        //Right click
+        else if (e.getButton() == MouseEvent.BUTTON3){
+            System.out.println(e.getButton());
             if(!currentRightClick){
-                //flood();
+                int xMouse=e.getX()-xOffset;
+                int yMouse=e.getY()-yOffset;
+                if(xMouse>0&&yMouse>0&&pipesArray[xMouse/squareSize][yMouse/squareSize].pipeThere()){
+                    pipesArray[xMouse/squareSize][yMouse/squareSize].flood();
+                }
+                JPanel panel = new JPanel();
+                panel.setPreferredSize(new Dimension(1000,1000));
+                Canvas myGraphic=new Canvas();
+                panel.add(myGraphic);
+                addMouseListener(this);
+                this.setSize((xSize*squareSize)+xOffset,(ySize*squareSize)+yOffset);
+                this.toFront(); 
+                this.setVisible(true);
+                repaint();
                 currentRightClick=true;
             }
         }
