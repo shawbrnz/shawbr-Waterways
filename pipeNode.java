@@ -3,7 +3,7 @@
  * Pipe node.
  *
  * @Brendan Shaw
- * @v14 - 26/5
+ * @v16 - 6/6
  */
 public class pipeNode
 {
@@ -45,6 +45,7 @@ public class pipeNode
     }
 
     public void flood(boolean isWater){
+        if(pipeThere()){
         boolean sendWaterChange=false;
         if(!waterHere&&isWater){
             sendWaterChange=true;
@@ -56,13 +57,13 @@ public class pipeNode
         if(sendWaterChange){
             for(int i=0; i<SQUARE_SIDES; i++){
                 if(pipes[i]){
-                    System.out.println(i);
                     if (adjacentNodeHasPipe(i)){
                         adjacentPipes[i].flood(isWater);
                     }
                 }
             }
         }
+    }
     }
 
     public boolean isWaterHere(){

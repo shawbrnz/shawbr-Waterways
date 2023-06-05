@@ -2,7 +2,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v14 - 26/5
+ * @v16 - 6/6
  * 
  * Need to:
  * 2- GUI,
@@ -25,41 +25,71 @@ public class main extends JFrame implements ActionListener, MouseListener
     final int Y_OFFSET=50;
     //Number of sides on a square (No magic numbers)
     final int SQUARE_SIDES=4;
-    
+
     //Initalising varibles. Note these are not finals as I plan for the user to be able to modify these
     //Size of squares
     int squareSize=100;
     //Number of squares
-    int xSize=10;
-    int ySize=10;
+    int xSize=100;
+    int ySize=100;
+    int x=xSize/2;
+    int y=ySize/2;
     //Array of the pipes. Third dimension is the edges
     pipeNode [][] pipesArray=new pipeNode[xSize][ySize];
     //To ensure it only runs once if clicked             TEMP
     boolean currentLeftClick=false;
     boolean currentRightClick=false;
+    //The mode types'
+    boolean floodMode=false;
+    //Menu 1
+    final String ACTION_MENU_NAME="Actions";
+    final String[] ACTION_MENU_ITEMS={"Change water", "Does nothing"};
+    final char[] ACTION_MENU_SHORTCUT = {'f','n'};
     public main()
     {
+        //Panel init
         JPanel panel = new JPanel();
-        panel.setPreferredSize(new Dimension(xSize*squareSize+X_OFFSET,ySize*squareSize+Y_OFFSET));
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        panel.setPreferredSize(screenSize);
+
+        //Menu
+        JMenuBar menuBar;
+        JMenuItem menuItem;
+        JMenu menu;
+        menuBar=new JMenuBar();
+        this.setJMenuBar(menuBar);
+        menu=new JMenu(ACTION_MENU_NAME);
+        menuBar.add(menu);
+        for(int i=0;i<ACTION_MENU_ITEMS.length;i++){
+            menuItem=new JMenuItem(ACTION_MENU_ITEMS[i]);
+            menuItem.addActionListener(this);
+            menuItem.setAccelerator(KeyStroke.getKeyStroke(ACTION_MENU_SHORTCUT[i]));
+            menu.add(menuItem);
+        }
+
+        //Canvas
         Canvas myGraphic=new Canvas();
         panel.add(myGraphic);
         addMouseListener(this);
-        this.setSize((xSize*squareSize)+X_OFFSET,(ySize*squareSize)+Y_OFFSET);
+        this.setSize(screenSize.width,screenSize.height);
         this.toFront(); 
         this.setVisible(true);
         repaint();
+
+        //Pipe init
         for(int i=0;i<pipesArray.length;i++){
             for(int j=0;j<pipesArray[i].length;j++){
                 pipesArray[i][j]=new pipeNode();
-                pipesArray[i][j].giveName((j*10)+i);
+                pipesArray[i][j].giveName((j*pipesArray.length)+i);
             }
         }
         for(int i=0;i<pipesArray.length;i++){
             for(int j=0;j<pipesArray[i].length;j++){
-                System.out.println("Annoyed");
                 int[] adjacentLocations=new int[SQUARE_SIDES];
                 //Not using switch because they are bad. (They dont allow variables)
-                //Edges loop around because it is much easier to code 
+                //Edges loop around because it is much easier to code, and is a simple
+                //way to resolve the edge issue. The user would probably not experience
+                //it anyway
                 if(i==0){
                     adjacentLocations[1]=xSize-1;
                     adjacentLocations[0]=i+1;
@@ -92,23 +122,24 @@ public class main extends JFrame implements ActionListener, MouseListener
         Graphics2D g2=(Graphics2D)g;
         int width = getWidth();
         int height = getHeight();
-        for(int i=0;i<pipesArray.length;i++){
-            for(int j=0;j<pipesArray[i].length;j++){
+        for(int i=0;i<height/squareSize;i++){
+            for(int j=0;j<width/squareSize;j++){
                 boolean squareHere=false;
                 for(int k=0;k<SQUARE_SIDES;k++){
-                    if(pipesArray[i][j].isWaterHere()){
-                        ImageIcon pipeImage=new ImageIcon("DebugWater.png");
-                        pipeImage.paintIcon(this,g,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET);
-                    }
                     if(squareHere){
-                        if(pipesArray[i][j].pipeThere(k)){
-                            ImageIcon pipeImage=new ImageIcon("pipe"+k+".png");
+                        if(pipesArray[i+x][j+y].pipeThere(k)){
+                            ImageIcon pipeImage;
+                            if(pipesArray[i+x][j+y].isWaterHere()){
+                                pipeImage=new ImageIcon("pipe"+k+"flooded.png");
+                            }else{
+                                pipeImage=new ImageIcon("pipe"+k+".png");
+                            }
                             pipeImage.paintIcon(this,g,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET);
                         }else{
                             ImageIcon pipeImage=new ImageIcon("nopipe"+k+".png");
                             pipeImage.paintIcon(this,g,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET);
                         }
-                    }else if (pipesArray[i][j].pipeThere(k)){
+                    }else if (pipesArray[i+x][j+y].pipeThere(k)){
                         squareHere=true;
                         k=-1;
                     }
@@ -116,17 +147,33 @@ public class main extends JFrame implements ActionListener, MouseListener
             }
         }
         //Grid
-        for(int i=0;i<=xSize;i++){
-            g.drawLine(i*(squareSize)+X_OFFSET, 0, i*(squareSize)+X_OFFSET, ySize*squareSize+Y_OFFSET);
+        for(int i=0;i<=getWidth()/squareSize;i++){
+            if(!(i>pipesArray.length)){
+                g.drawLine(i*(squareSize)+X_OFFSET, 0, i*(squareSize)+X_OFFSET, ySize*squareSize+Y_OFFSET);
+            }else{
+                i=getWidth()/squareSize+1;
+            }
         }
         //Has to be done twice due to the chance of differing y and x sizes
-        for(int i=0;i<=ySize;i++){
-            g.drawLine(0, i*(squareSize)+Y_OFFSET, xSize*squareSize+X_OFFSET, i*(squareSize)+Y_OFFSET);
+        for(int i=0;i<=getHeight()/squareSize;i++){
+            if(!(i>pipesArray[0].length)){
+                g.drawLine(0, i*(squareSize)+Y_OFFSET, xSize*squareSize+X_OFFSET, i*(squareSize)+Y_OFFSET);
+            }else{
+                i=getHeight()/squareSize+1;
+            }
         }
     }
-    //These are required, dispite the fact that they are not used.
-    public void actionPerformed(ActionEvent e){}
 
+    public void actionPerformed(ActionEvent e){
+        String itemClicked=e.getActionCommand();
+        for(int i=0;i<ACTION_MENU_ITEMS.length;i++){
+            if(ACTION_MENU_ITEMS[i]==itemClicked){
+                action(i);
+            }
+        }
+    }
+
+    //These are required, dispite the fact that they are not used.
     public void mouseExited(MouseEvent e){}
 
     public void mouseEntered(MouseEvent e){}
@@ -139,14 +186,22 @@ public class main extends JFrame implements ActionListener, MouseListener
     public void mousePressed(MouseEvent e){
         int xMouse=e.getX()-X_OFFSET;
         int yMouse=e.getY()-Y_OFFSET;
-        pipeNode selectedNode=pipesArray[xMouse/squareSize][yMouse/squareSize];
+        pipeNode selectedNode=pipesArray[xMouse/squareSize+x][yMouse/squareSize+y];
+        System.out.println(xMouse/squareSize+x);
+        System.out.println(yMouse/squareSize+y);
+        System.out.println("AHHH");
         //Left click
         if(e.getButton() == MouseEvent.BUTTON1){
             if(!currentLeftClick){
                 if(xMouse>0&&yMouse>0){
                     int side=subSquares(yMouse%squareSize,xMouse%squareSize,squareSize);
-                    selectedNode.swapPipe(side);
-                    selectedNode.floodNodeIfShouldBe(side);
+                    if(floodMode){
+                        selectedNode.flood(!selectedNode.isWaterHere());
+                        floodMode=false;
+                    }else{
+                        selectedNode.swapPipe(side);
+                        selectedNode.floodNodeIfShouldBe(side);
+                    }
                 }
                 JPanel panel = new JPanel();
                 panel.setPreferredSize(new Dimension(1000,1000));
@@ -162,21 +217,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         }
         //Right click
         else if (e.getButton() == MouseEvent.BUTTON3){
-            if(!currentRightClick){
-                if(xMouse>0&&yMouse>0&&selectedNode.pipeThere()){
-                    selectedNode.flood(!selectedNode.isWaterHere());
-                }
-                JPanel panel = new JPanel();
-                panel.setPreferredSize(new Dimension(1000,1000));
-                Canvas myGraphic=new Canvas();
-                panel.add(myGraphic);
-                addMouseListener(this);
-                this.setSize((xSize*squareSize)+X_OFFSET,(ySize*squareSize)+Y_OFFSET);
-                this.toFront(); 
-                this.setVisible(true);
-                repaint();
-                currentRightClick=true;
-            }
+
         }
     }
 
@@ -226,4 +267,17 @@ public class main extends JFrame implements ActionListener, MouseListener
         //Should not run, but is required for java. Will be removed after cleaning
         return -1;
     }
+    //Processes the action 
+    public void action(int actionInput){
+        switch(actionInput){
+            case 0:
+                floodMode=!floodMode;
+                break;
+            case 1:
+                break;
+            default:
+                System.out.println("Error, not an action");
+        }
+    }
+
 }

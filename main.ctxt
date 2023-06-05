@@ -2,6 +2,8 @@
 comment0.target=main
 comment1.params=
 comment1.target=main()
+comment10.params=actionInput
+comment10.target=void\ action(int)
 comment2.params=g
 comment2.target=void\ paint(java.awt.Graphics)
 comment3.params=e
@@ -18,4 +20,4 @@ comment8.params=e
 comment8.target=void\ mouseClicked(java.awt.event.MouseEvent)
 comment9.params=yClicked\ xClicked\ squareSize
 comment9.target=int\ subSquares(int,\ int,\ int)
-numComments=10
+numComments=11
