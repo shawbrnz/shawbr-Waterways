@@ -3,7 +3,7 @@
  * Pipe node.
  *
  * @Brendan Shaw
- * @v16 - 6/6
+ * @v17 - 8/6
  */
 public class pipeNode
 {
@@ -11,7 +11,8 @@ public class pipeNode
     final int SQUARE_SIDES=4;
     private boolean[] pipes=new boolean[SQUARE_SIDES];
     private boolean waterHere=false;
-    private int name;
+    private int xLoc;
+    private int yLoc;
     private pipeNode[] adjacentPipes=new pipeNode[SQUARE_SIDES];
     public void setAdjacentPipeNode(pipeNode[] adjaceneNodes){
         for(int i=0; i<SQUARE_SIDES; i++){
@@ -19,13 +20,19 @@ public class pipeNode
         }
     }
 
-    public void giveName(int givenName){
-        name=givenName;
+    public void giveLocation(int x,int y){
+        xLoc=x;
+        yLoc=y;
     }
 
-    public int whatName(){
-        return(name);
+    public int xLocation(){
+        return(xLoc);
     }
+    
+    public int yLocation(){
+        return(yLoc);
+    }
+
 
     public boolean pipeThere(){
         for(int i=0; i<SQUARE_SIDES; i++){
@@ -42,28 +49,40 @@ public class pipeNode
 
     public void swapPipe(int pipe){
         pipes[pipe]=!pipes[pipe];
+        if(!pipeThere()){
+            waterHere=false;
+        }
+    }
+    
+    public void forcePipe(int pipe, boolean pipeState){
+        pipes[pipe]=pipeState;
+        if(pipes[pipe]){
+            for(int i=0; i<SQUARE_SIDES; i++){
+                floodNodeIfShouldBe(i);
+            }
+        }
     }
 
     public void flood(boolean isWater){
         if(pipeThere()){
-        boolean sendWaterChange=false;
-        if(!waterHere&&isWater){
-            sendWaterChange=true;
-            waterHere=true;
-        }else if(waterHere&&!isWater){
-            sendWaterChange=true;
-            waterHere=false;
-        }
-        if(sendWaterChange){
-            for(int i=0; i<SQUARE_SIDES; i++){
-                if(pipes[i]){
-                    if (adjacentNodeHasPipe(i)){
-                        adjacentPipes[i].flood(isWater);
+            boolean sendWaterChange=false;
+            if(!waterHere&&isWater){
+                sendWaterChange=true;
+                waterHere=true;
+            }else if(waterHere&&!isWater){
+                sendWaterChange=true;
+                waterHere=false;
+            }
+            if(sendWaterChange){
+                for(int i=0; i<SQUARE_SIDES; i++){
+                    if(pipes[i]){
+                        if (adjacentNodeHasPipe(i)){
+                            adjacentPipes[i].flood(isWater);
+                        }
                     }
                 }
             }
         }
-    }
     }
 
     public boolean isWaterHere(){
