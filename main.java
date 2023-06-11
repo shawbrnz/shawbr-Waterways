@@ -2,7 +2,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v17 - 8/6
+ * @v19 - 12/6
  * 
  * Need to:
  * 2- GUI,
@@ -180,7 +180,7 @@ public class main extends JFrame implements ActionListener, MouseListener
             }
         }
     }
-
+    //Finds what item is clicked in the menu
     public void actionPerformed(ActionEvent e){
         String itemClicked=e.getActionCommand();
         //Added this so it doesnt have to loop more times if it has alrady found it
@@ -209,7 +209,7 @@ public class main extends JFrame implements ActionListener, MouseListener
     public void mouseExited(MouseEvent e){}
 
     public void mouseEntered(MouseEvent e){}
-
+    //Activates the 'dragging' when hte mouse is let go and allows for another click to occur
     public void mouseReleased(MouseEvent e){
         if(e.getButton() == MouseEvent.BUTTON1){
             currentLeftClick=false;
@@ -221,11 +221,11 @@ public class main extends JFrame implements ActionListener, MouseListener
         }
         else if(e.getButton() == MouseEvent.BUTTON3){currentRightClick=false;}
     }
-
+    //Processes the stuff for when there is a click
     public void mousePressed(MouseEvent e){
         int xMouse=e.getX()-X_OFFSET;
         int yMouse=e.getY()-Y_OFFSET;
-        
+
         //Left click
         if(e.getButton() == MouseEvent.BUTTON1){
             if(!currentLeftClick){
@@ -301,28 +301,118 @@ public class main extends JFrame implements ActionListener, MouseListener
     }
     //Swaps the pipes if they are dragged over
     public void fillPipeDrag(int xNode1,int yNode1,int xNode2,int yNode2){
-        int pipeSideDefultState;
         if(Math.abs(xNode1-xNode2)>Math.abs(yNode1-yNode2)){
             //'Drags' the x
-            pipeNode firstNode=pipesArray[xNode1/squareSize+x][yNode1/squareSize+y];
-            if(xNode1%squareSize>squareSize/2){
-                pipeSideDefultState=1;
+            if(xNode1<xNode2){
+                pipeLine(xNode1,xNode2,yNode1,yNode1,true);
             }else{
-                pipeSideDefultState=3;
+                pipeLine(xNode2,xNode1,yNode2,yNode2,true);
             }
-            //y is the same as the first node to 'lock' in a line
-            pipeNode secondNode=pipesArray[xNode2/squareSize+x][yNode1/squareSize+y];
-            //I am going to handle the end pipes seperately
-            int xFirst=firstNode.xLocation()+x;
-            int yFirst=firstNode.yLocation()+y;
-            boolean stateToConvertTo=firstNode.pipeThere(pipeSideDefultState);
-            for(int i=xFirst+1;i<secondNode.xLocation()+x;i++){
-                pipesArray[i][yFirst].forcePipe(1,stateToConvertTo);
-                pipesArray[i][yFirst].forcePipe(3,stateToConvertTo);
-            }    
         }else{
             //'Drags' the y
-        
+            if(yNode1<yNode2){
+                pipeLine(xNode1,xNode1,yNode1,yNode2,false);
+            }else{
+                pipeLine(xNode2,xNode2,yNode2,yNode1,false);
+            }
+        }
+    }
+    //Puts a line of pipes down
+    public void pipeLine(int x1,int x2,int y1,int y2, boolean xDirection){
+
+        //Finds the first node
+        pipeNode firstNode=pipesArray[x1/squareSize+x][y1/squareSize+y];
+        pipeNode secondNode;
+
+        int xFirst=firstNode.xLocation()+x;
+        int yFirst=firstNode.yLocation()+y;
+        int pipeSideDefultState;
+
+        //Initialises the directions
+        int [] directions=new int[2];
+
+        int endCoordenate;
+        int startCoordenate;
+        //This initalises all the varible that depend on whether the 'drag' is on the x direction or the y direction
+        //There is a lot of stuff which is specific to each of the sides I might create more varibles to clean this
+        if(xDirection){
+            //The directions of the x
+            directions[0]=1;
+            directions[1]=3;
+
+            //y is the same as the first node to 'lock' in a line
+            secondNode=pipesArray[x2/squareSize+x][y1/squareSize+y];
+
+            if(x1%squareSize>squareSize/2){
+                pipeSideDefultState=directions[0];
+                processEndNodes(false,directions[0],firstNode,(SQUARE_SIDES/2));
+            }else{
+                pipeSideDefultState=directions[1];
+                processEndNodes(true,directions[0],firstNode,(SQUARE_SIDES/2));
+            }
+
+            //Processes the far end node
+            if(x2%squareSize>squareSize/2){
+                processEndNodes(true,directions[1],secondNode,-(SQUARE_SIDES/2));
+            }else{
+                processEndNodes(true,directions[1],secondNode,-(SQUARE_SIDES/2));
+            }
+
+            endCoordenate=secondNode.xLocation()+x;
+            startCoordenate=xFirst+1;
+        }else{
+            //The directions of the y
+            directions[0]=0;
+            directions[1]=2;
+
+            //x is the same as the first node to 'lock' in a line
+            secondNode=pipesArray[x1/squareSize+x][y2/squareSize+y];
+
+            //Processes the close node
+            if(y1%squareSize>squareSize/2){
+                pipeSideDefultState=directions[0];
+                processEndNodes(false,directions[0],firstNode,(squareSize/2));
+            }else{
+                pipeSideDefultState=directions[1];
+                processEndNodes(true,directions[0],firstNode,(squareSize/2));
+            }
+
+            //Processes the far end node
+            if(y2%squareSize>squareSize/2){
+                processEndNodes(true,directions[1],secondNode,-(squareSize/2));
+            }else{
+                processEndNodes(true,directions[1],secondNode,-(squareSize/2));
+            }
+
+            endCoordenate=secondNode.yLocation()+y;
+            startCoordenate=yFirst+1;
+        }
+
+        //This handles the end pipes seperately
+        //swapPipe();
+        //I am going to handle the end pipes seperately, to ensure only particular sides get swapped
+        boolean stateToConvertTo=firstNode.pipeThere(pipeSideDefultState);
+        for(int i=startCoordenate;i<endCoordenate;i++){
+            //I dont see a better way of doing this currently, as there is no way to my knowledge to
+            //input the order of array coordeinates using a variable
+            pipeNode selectedNode;
+            if(xDirection){
+                selectedNode=pipesArray[i][yFirst];
+            }else{
+                selectedNode=pipesArray[xFirst][i];
+            }
+            //Dispite this only being 2 long, I decided to use a for loop because its 'cleaner'
+            for(int j=0;j<squareSize/2;j++){
+                selectedNode.forcePipe(directions[j],stateToConvertTo);
+                selectedNode.floodNodeIfShouldBe(directions[j]);
+            }
+        }
+    }
+    //Used only by the function above. 
+    public void processEndNodes(boolean twoPipes, int smallSize, pipeNode nodeToSwap, int directionOfOtherSide){
+        nodeToSwap.swapPipe(smallSize);
+        if(twoPipes){
+            nodeToSwap.swapPipe(smallSize+(directionOfOtherSide));
         }
     }
     //Processes the action 

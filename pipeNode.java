@@ -3,7 +3,7 @@
  * Pipe node.
  *
  * @Brendan Shaw
- * @v17 - 8/6
+ * @v19 - 12/6
  */
 public class pipeNode
 {
@@ -51,6 +51,8 @@ public class pipeNode
         pipes[pipe]=!pipes[pipe];
         if(!pipeThere()){
             waterHere=false;
+        }else{
+            floodNodeIfShouldBe(pipe);
         }
     }
     
