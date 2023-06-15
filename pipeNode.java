@@ -46,7 +46,7 @@ public class pipeNode
     public boolean pipeThere(int pipe){
         return pipes[pipe];
     }
-
+    //Swaps the pipes state
     public void swapPipe(int pipe){
         pipes[pipe]=!pipes[pipe];
         if(!pipeThere()){
@@ -55,7 +55,7 @@ public class pipeNode
             floodNodeIfShouldBe(pipe);
         }
     }
-    
+    //Forces a pipe into a state
     public void forcePipe(int pipe, boolean pipeState){
         pipes[pipe]=pipeState;
         if(pipes[pipe]){
@@ -64,7 +64,7 @@ public class pipeNode
             }
         }
     }
-
+    //Floods/unfloods this node and then the adjacent nodes
     public void flood(boolean isWater){
         if(pipeThere()){
             boolean sendWaterChange=false;
@@ -86,13 +86,15 @@ public class pipeNode
             }
         }
     }
-
+    //Returns if water is here
     public boolean isWaterHere(){
         return waterHere;
     }
-
+    //Tests to see if the adjacent node has the pipe facing this node
     public boolean adjacentNodeHasPipe(int side){
-        if(((side>((SQUARE_SIDES/2)-1))&&(adjacentPipes[side].pipeThere(side-(SQUARE_SIDES/2))))||((side<(SQUARE_SIDES/2))&&(adjacentPipes[side].pipeThere(side+(SQUARE_SIDES/2))))){
+        //There is no way to make this smaller without added extra ifs
+        if(((side>((SQUARE_SIDES/2)-1))&&(adjacentPipes[side].pipeThere(side-(SQUARE_SIDES/2))))
+        ||((side<(SQUARE_SIDES/2))&&(adjacentPipes[side].pipeThere(side+(SQUARE_SIDES/2))))){
             return true;
         }
         return false;

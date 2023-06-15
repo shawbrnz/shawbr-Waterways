@@ -2,16 +2,18 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v19 - 12/6
+ * @v20 - 16/6
  * 
  * Need to:
- * 2- GUI,
- * 1- CLEAN UP!
- * 3- Water,
- * 4- File stuff
+ * 1- Finish the pipe dragging,
+ * 2- CLEAN UP!
+ * 3- File stuff
  */
 
 //Importing
+
+//NEED TO CHECK TO ENSURE ALL OF THESE ARE USED
+
 import java.util.Scanner;
 import javax.swing.*;
 import javax.swing.JFrame;   
@@ -27,14 +29,18 @@ public class main extends JFrame implements ActionListener, MouseListener
     final int SQUARE_SIDES=4;
 
     //Initalising varibles. Note these are not finals as I plan for the user to be able to modify these
+    
+    //NEEED TO MAKE SOME OF THESE CONSTANT, I DO NOT WANT THE USER TO MODIFY THESE, BUT I DO OTHERS
+    
     //Size of squares
     int squareSize=100;
-    //Number of squares
+    //Number of squares. 
     int xSize=100;
     int ySize=100;
     int x=xSize/2;
     int y=ySize/2;
-    //Array of the pipes. Third dimension is the edges
+    //Array of the pipes. Third dimension is the edges (Note pipesArray is now 2d, however, some for loops
+    //still use the third dimension as the side)
     pipeNode [][] pipesArray=new pipeNode[xSize][ySize];
     //To ensure it only runs once if clicked             
     boolean currentLeftClick=false;
@@ -61,6 +67,9 @@ public class main extends JFrame implements ActionListener, MouseListener
         panel.setPreferredSize(screenSize);
 
         //Menu
+        
+        //NEEED TO CLEAN
+        
         JMenuBar menuBar;
         JMenuItem menuItem;
         JMenu actionMenu;
@@ -84,7 +93,7 @@ public class main extends JFrame implements ActionListener, MouseListener
             movementMenu.add(menuItem);
         }
 
-        //Canvas
+        //Canvas init
         Canvas myGraphic=new Canvas();
         panel.add(myGraphic);
         addMouseListener(this);
@@ -133,7 +142,7 @@ public class main extends JFrame implements ActionListener, MouseListener
             }
         }
     }
-
+    //This renders the grid
     public void paint (Graphics g){
         super.paint(g);
         Graphics2D g2=(Graphics2D)g;
@@ -223,18 +232,21 @@ public class main extends JFrame implements ActionListener, MouseListener
     }
     //Processes the stuff for when there is a click
     public void mousePressed(MouseEvent e){
+        //This ensures that the gui does not interfare with the grid
         int xMouse=e.getX()-X_OFFSET;
         int yMouse=e.getY()-Y_OFFSET;
 
         //Left click
         if(e.getButton() == MouseEvent.BUTTON1){
+            //This is to resolve issues of multiple clicks
             if(!currentLeftClick){
+                //This is to resolve issues if the user clicks off the screen
                 if(xMouse>0&&yMouse>0){
                     pipeNode selectedNode=pipesArray[xMouse/squareSize+x][yMouse/squareSize+y];
                     int side=subSquares(yMouse%squareSize,xMouse%squareSize,squareSize);
                     if(floodMode){
                         selectedNode.flood(!selectedNode.isWaterHere());
-                        floodMode=false;
+                        //No longer deactivation floodmode 
                     }else{
                         //selectedNode.swapPipe(side);
                         //selectedNode.floodNodeIfShouldBe(side);
@@ -257,6 +269,8 @@ public class main extends JFrame implements ActionListener, MouseListener
     //per click which is bad if it only should go once
     public void mouseClicked(MouseEvent e){}
 
+    //This function may be obsolete
+    
     //Returns the side of the square that is clicked, 0 being top, going clockwise, left being 3
     int subSquares(int yClicked, int xClicked, int squareSize){
         //It is possible to make this slightly faster by splitting the left
@@ -326,8 +340,8 @@ public class main extends JFrame implements ActionListener, MouseListener
         pipeNode firstNode=pipesArray[x1/squareSize+x][y1/squareSize+y];
         pipeNode secondNode;
 
-        int xFirst=firstNode.xLocation()+x;
-        int yFirst=firstNode.yLocation()+y;
+        int xFirst=firstNode.xLocation();
+        int yFirst=firstNode.yLocation();
         int pipeSideDefultState;
 
         //Initialises the directions
@@ -368,8 +382,8 @@ public class main extends JFrame implements ActionListener, MouseListener
             }else{
                 processEndNodes(true,directions[1],secondNode,-(SQUARE_SIDES/2));
             }
-
-            endCoordenate=secondNode.xLocation()+x;
+            
+            endCoordenate=secondNode.xLocation();
             startCoordenate=xFirst+1;
         }else{
             //The directions of the y
@@ -401,7 +415,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                 processEndNodes(true,directions[1],secondNode,-(squareSize/2));
             }
 
-            endCoordenate=secondNode.yLocation()+y;
+            endCoordenate=secondNode.yLocation();
             startCoordenate=yFirst+1;
         }
         //I am going to handle the end pipes seperately, to ensure only particular sides get swapped
@@ -411,20 +425,23 @@ public class main extends JFrame implements ActionListener, MouseListener
             //input the order of array coordeinates using a variable
             pipeNode selectedNode;
             if(xDirection){
+                System.out.println("1- Locked y to "+yFirst+". Current y is "+y+". i is"+i+". X"+x);
                 selectedNode=pipesArray[i][yFirst];
-                System.out.println("Locked y to "+yFirst+". Current y is "+y);
+                System.out.println("2- Locked y to "+yFirst+". Current y is "+y);
             }else{
+                System.out.println("1-Locked x to "+xFirst+". Current x is "+x);
                 selectedNode=pipesArray[xFirst][i];
-                System.out.println("Locked x to "+xFirst+". Current x is "+x);
+                System.out.println("2-Locked x to "+xFirst+". Current x is "+x);
             }
             System.out.println("i is "+i);
             //Dispite this only being 2 long, I decided to use a for loop because its 'cleaner'
-            for(int j=0;j<squareSize/2;j++){
-                System.out.println("The state to conver to is "+stateToConvertTo+". The direction is "+directions[j]);
+            for(int j=0;j<SQUARE_SIDES/2;j++){
+                System.out.println("The state to conver to is "+stateToConvertTo+". The direction is "+directions[j]+". ij "+i+","+j+". Max should be "+SQUARE_SIDES/2+". xy "+selectedNode.xLocation()+","+selectedNode.yLocation());
                 selectedNode.forcePipe(directions[j],stateToConvertTo);
-                selectedNode.floodNodeIfShouldBe(directions[j]);
+                //selectedNode.floodNodeIfShouldBe(directions[j]);
             }
         }
+        System.out.println("After the for loop. Start is "+startCoordenate+", end is "+endCoordenate+". XY is "+x+","+y+". The direction is "+xDirection);
     }
     //Used only by the function above. 
     public void processEndNodes(boolean twoPipes, int smallSize, pipeNode nodeToSwap, int directionOfOtherSide){
