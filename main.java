@@ -2,7 +2,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v20 - 16/6
+ * @v21 - 19/6
  * 
  * Need to:
  * 1- Finish the pipe dragging,
@@ -222,11 +222,14 @@ public class main extends JFrame implements ActionListener, MouseListener
     public void mouseReleased(MouseEvent e){
         if(e.getButton() == MouseEvent.BUTTON1){
             currentLeftClick=false;
+            if(!floodMode){
             int xMouse=e.getX()-X_OFFSET;
             int yMouse=e.getY()-Y_OFFSET;
             if(xMouse>0&&yMouse>0){
                 fillPipeDrag(xClick,yClick,xMouse,yMouse);
             }
+        }
+            repaint();
         }
         else if(e.getButton() == MouseEvent.BUTTON3){currentRightClick=false;}
     }
@@ -246,7 +249,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                     int side=subSquares(yMouse%squareSize,xMouse%squareSize,squareSize);
                     if(floodMode){
                         selectedNode.flood(!selectedNode.isWaterHere());
-                        //No longer deactivation floodmode 
+                        //No longer deactivation floodmode, as per review 
                     }else{
                         //selectedNode.swapPipe(side);
                         //selectedNode.floodNodeIfShouldBe(side);
@@ -315,9 +318,7 @@ public class main extends JFrame implements ActionListener, MouseListener
     }
     //Swaps the pipes if they are dragged over
     public void fillPipeDrag(int xNode1,int yNode1,int xNode2,int yNode2){
-        System.out.println(xNode1+" "+yNode1+" "+xNode2+" "+yNode2);
         if(Math.abs(xNode1-xNode2)>Math.abs(yNode1-yNode2)){
-            System.out.println("If ");
             //'Drags' the x
             if(xNode1<xNode2){
                 pipeLine(xNode1,xNode2,yNode1,yNode1,true);
@@ -325,7 +326,6 @@ public class main extends JFrame implements ActionListener, MouseListener
                 pipeLine(xNode2,xNode1,yNode2,yNode2,true);
             }
         }else{
-            System.out.println("Else");
             //'Drags' the y
             if(yNode1<yNode2){
                 pipeLine(xNode1,xNode1,yNode1,yNode2,false);
@@ -356,8 +356,8 @@ public class main extends JFrame implements ActionListener, MouseListener
         //There is a lot of stuff which is specific to each of the sides I might create more varibles to clean this
         if(xDirection){
             //The directions of the x
-            directions[0]=1;
-            directions[1]=3;
+            directions[0]=SQUARE_SIDES/2-1;
+            directions[1]=SQUARE_SIDES/2+1;
 
             //y is the same as the first node to 'lock' in a line
             secondNode=pipesArray[x2/squareSize+x][y1/squareSize+y];
@@ -365,31 +365,31 @@ public class main extends JFrame implements ActionListener, MouseListener
             if(x1%squareSize>squareSize/2){
                 pipeSideDefultState=directions[0];
                 //This needs to be done here, because this is after the defult state is found and before the first pipe is changed
-                stateToConvertTo=firstNode.pipeThere(pipeSideDefultState); 
+                stateToConvertTo=!firstNode.pipeThere(pipeSideDefultState); 
                 //Processes end node
-                processEndNodes(false,directions[0],firstNode,(SQUARE_SIDES/2));
+                processEndNodes(false,directions[0],firstNode,(SQUARE_SIDES/2),stateToConvertTo);
             }else{
                 pipeSideDefultState=directions[1];
                 //This needs to be done here, because this is after the defult state is found and before the first pipe is changed
-                stateToConvertTo=firstNode.pipeThere(pipeSideDefultState); 
+                stateToConvertTo=!firstNode.pipeThere(pipeSideDefultState); 
                 //Processes end node
-                processEndNodes(true,directions[0],firstNode,(SQUARE_SIDES/2));
+                processEndNodes(true,directions[0],firstNode,(SQUARE_SIDES/2),stateToConvertTo);
             }
 
             //Processes the far end node
             if(x2%squareSize>squareSize/2){
-                processEndNodes(true,directions[1],secondNode,-(SQUARE_SIDES/2));
+                processEndNodes(true,directions[1],secondNode,-(SQUARE_SIDES/2),stateToConvertTo);
             }else{
-                processEndNodes(true,directions[1],secondNode,-(SQUARE_SIDES/2));
+                processEndNodes(false,directions[1],secondNode,-(SQUARE_SIDES/2),stateToConvertTo);
             }
             
             endCoordenate=secondNode.xLocation();
             startCoordenate=xFirst+1;
         }else{
             //The directions of the y
-            directions[0]=0;
-            directions[1]=2;
-
+            directions[0]=SQUARE_SIDES/2-2;
+            directions[1]=SQUARE_SIDES/2;
+            
             //x is the same as the first node to 'lock' in a line
             secondNode=pipesArray[x1/squareSize+x][y2/squareSize+y];
 
@@ -397,57 +397,47 @@ public class main extends JFrame implements ActionListener, MouseListener
             if(y1%squareSize>squareSize/2){
                 pipeSideDefultState=directions[0];
                 //This needs to be done here, because this is after the defult state is found and before the first pipe is changed
-                stateToConvertTo=firstNode.pipeThere(pipeSideDefultState); 
+                stateToConvertTo=!firstNode.pipeThere(pipeSideDefultState); 
                 //Processes end node
-                processEndNodes(false,directions[0],firstNode,(squareSize/2));
+                processEndNodes(false,directions[1],firstNode,-(SQUARE_SIDES/2),stateToConvertTo);
             }else{
                 pipeSideDefultState=directions[1];
                 //This needs to be done here, because this is after the defult state is found and before the first pipe is changed
-                stateToConvertTo=firstNode.pipeThere(pipeSideDefultState); 
+                stateToConvertTo=!firstNode.pipeThere(pipeSideDefultState); 
                 //Processes end node
-                processEndNodes(true,directions[0],firstNode,(squareSize/2));
+                processEndNodes(true,directions[1],firstNode,-(SQUARE_SIDES/2),stateToConvertTo);
             }
-
             //Processes the far end node
             if(y2%squareSize>squareSize/2){
-                processEndNodes(true,directions[1],secondNode,-(squareSize/2));
+                processEndNodes(true,directions[0],secondNode,(SQUARE_SIDES/2),stateToConvertTo);
             }else{
-                processEndNodes(true,directions[1],secondNode,-(squareSize/2));
+                processEndNodes(false,directions[0],secondNode,(SQUARE_SIDES/2),stateToConvertTo);
             }
-
             endCoordenate=secondNode.yLocation();
             startCoordenate=yFirst+1;
         }
         //I am going to handle the end pipes seperately, to ensure only particular sides get swapped
-        System.out.println("Before the for loop. Start is "+startCoordenate+", end is "+endCoordenate+". XY is "+x+","+y+". The direction is "+xDirection);
         for(int i=startCoordenate;i<endCoordenate;i++){
             //I dont see a better way of doing this currently, as there is no way to my knowledge to
             //input the order of array coordeinates using a variable
             pipeNode selectedNode;
             if(xDirection){
-                System.out.println("1- Locked y to "+yFirst+". Current y is "+y+". i is"+i+". X"+x);
                 selectedNode=pipesArray[i][yFirst];
-                System.out.println("2- Locked y to "+yFirst+". Current y is "+y);
             }else{
-                System.out.println("1-Locked x to "+xFirst+". Current x is "+x);
                 selectedNode=pipesArray[xFirst][i];
-                System.out.println("2-Locked x to "+xFirst+". Current x is "+x);
             }
-            System.out.println("i is "+i);
             //Dispite this only being 2 long, I decided to use a for loop because its 'cleaner'
             for(int j=0;j<SQUARE_SIDES/2;j++){
-                System.out.println("The state to conver to is "+stateToConvertTo+". The direction is "+directions[j]+". ij "+i+","+j+". Max should be "+SQUARE_SIDES/2+". xy "+selectedNode.xLocation()+","+selectedNode.yLocation());
                 selectedNode.forcePipe(directions[j],stateToConvertTo);
                 //selectedNode.floodNodeIfShouldBe(directions[j]);
             }
         }
-        System.out.println("After the for loop. Start is "+startCoordenate+", end is "+endCoordenate+". XY is "+x+","+y+". The direction is "+xDirection);
     }
     //Used only by the function above. 
-    public void processEndNodes(boolean twoPipes, int smallSize, pipeNode nodeToSwap, int directionOfOtherSide){
-        nodeToSwap.swapPipe(smallSize);
+    public void processEndNodes(boolean twoPipes, int smallSize, pipeNode nodeToSwap, int directionOfOtherSide, boolean stateToConvertTo){
+        nodeToSwap.forcePipe(smallSize,stateToConvertTo);
         if(twoPipes){
-            nodeToSwap.swapPipe(smallSize+(directionOfOtherSide));
+            nodeToSwap.forcePipe(smallSize+(directionOfOtherSide),stateToConvertTo);
         }
     }
     //Processes the action 
