@@ -2,12 +2,11 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v21 - 19/6
+ * @v22 - 22/6
  * 
  * Need to:
- * 1- Finish the pipe dragging,
  * 2- CLEAN UP!
- * 3- File stuff
+ * 1- File stuff
  */
 
 //Importing
@@ -15,11 +14,18 @@
 //NEED TO CHECK TO ENSURE ALL OF THESE ARE USED
 
 import java.util.Scanner;
+
 import javax.swing.*;
-import javax.swing.JFrame;   
+import javax.swing.JFrame; 
+import javax.swing.border.TitledBorder;  
+
 import java.awt.Dimension;
 import java.awt.event.*;
 import java.awt.*;
+
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.io.File;
 public class main extends JFrame implements ActionListener, MouseListener
 {
     //Offset the grid is from the UI
@@ -27,49 +33,55 @@ public class main extends JFrame implements ActionListener, MouseListener
     final int Y_OFFSET=50;
     //Number of sides on a square (No magic numbers)
     final int SQUARE_SIDES=4;
+    //Name of the window
+    final String WINDOW_TITLE="Brendan Shaw's Waterways Project";
 
     //Initalising varibles. Note these are not finals as I plan for the user to be able to modify these
-    
-    //NEEED TO MAKE SOME OF THESE CONSTANT, I DO NOT WANT THE USER TO MODIFY THESE, BUT I DO OTHERS
-    
+
     //Size of squares
     int squareSize=100;
     //Number of squares. 
-    int xSize=100;
-    int ySize=100;
+    int xSize=1000;
+    int ySize=1000;
     int x=xSize/2;
     int y=ySize/2;
     //Array of the pipes. Third dimension is the edges (Note pipesArray is now 2d, however, some for loops
-    //still use the third dimension as the side)
+    //still use the third dimension as the side, so ill leave the comment here)
     pipeNode [][] pipesArray=new pipeNode[xSize][ySize];
     //To ensure it only runs once if clicked             
     boolean currentLeftClick=false;
     boolean currentRightClick=false;
-    //Clicked node data
+    //Clicked node data. Needs to be initialised here
     int xClick;
     int yClick;
-    //The mode types'
+    //The mode types. Currently just flood but should be able to easily add more
     boolean floodMode=false;
-    //Menu 1
+    //Menu 1- Actions
     final String ACTION_MENU_NAME="Actions";
-    final String[] ACTION_MENU_ITEMS={"Change water","Does nothing"};
-    final char[] ACTION_MENU_SHORTCUT = {'f','n'};
-    //Menu 2
+    final String[] ACTION_MENU_ITEMS={"Change water"};
+    final char[] ACTION_MENU_SHORTCUT = {'f'};
+    //Menu 2- Movement
     //I tried to use keyboard listener but I couldn't get them working so I decided to use hotkeys
     final String MOVEMENT_MENU_NAME="Movement";
     final String[] MOVEMENT_MENU_ITEMS={"Up","Left","Right","Down"};
     final char[] MOVEMENT_MENU_SHORTCUT = {'w','a','d','s'};
+    
+    
+    //Frame and Panel init
+    JFrame frame = new JFrame(WINDOW_TITLE);
+        JPanel panel = new JPanel();
+        
     public main()
     {
-        //Panel init
-        JPanel panel = new JPanel();
+        //Finish init
+        System.out.println(WINDOW_TITLE);
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        panel.setPreferredSize(screenSize);
-
+        frame.setPreferredSize(screenSize);
+        
         //Menu
-        
+
         //NEEED TO CLEAN
-        
+
         JMenuBar menuBar;
         JMenuItem menuItem;
         JMenu actionMenu;
@@ -102,6 +114,9 @@ public class main extends JFrame implements ActionListener, MouseListener
         this.setVisible(true);
         repaint();
 
+        frame.add(panel);
+        frame.show();
+        
         //Pipe init
         for(int i=0;i<pipesArray.length;i++){
             for(int j=0;j<pipesArray[i].length;j++){
@@ -148,34 +163,10 @@ public class main extends JFrame implements ActionListener, MouseListener
         Graphics2D g2=(Graphics2D)g;
         int width = getWidth();
         int height = getHeight();
-        for(int i=0;i<width/squareSize;i++){
-            for(int j=0;j<height/squareSize;j++){
-                boolean squareHere=false;
-                for(int k=0;k<SQUARE_SIDES;k++){
-                    if(squareHere){
-                        if(pipesArray[i+x][j+y].pipeThere(k)){
-                            ImageIcon pipeImage;
-                            if(pipesArray[i+x][j+y].isWaterHere()){
-                                pipeImage=new ImageIcon("pipe"+k+"flooded.png");
-                            }else{
-                                pipeImage=new ImageIcon("pipe"+k+".png");
-                            }
-                            pipeImage.paintIcon(this,g,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET);
-                        }else{
-                            ImageIcon pipeImage=new ImageIcon("nopipe"+k+".png");
-                            pipeImage.paintIcon(this,g,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET);
-                        }
-                    }else if (pipesArray[i+x][j+y].pipeThere(k)){
-                        squareHere=true;
-                        k=-1;
-                    }
-                }
-            }
-        }
         //Grid
         for(int i=0;i<=getWidth()/squareSize;i++){
             if(!(i>pipesArray.length)){
-                g.drawLine(i*(squareSize)+X_OFFSET, 0, i*(squareSize)+X_OFFSET, ySize*squareSize+Y_OFFSET);
+                g.drawLine(i*(squareSize)+X_OFFSET, Y_OFFSET, i*(squareSize)+X_OFFSET, ySize*squareSize+Y_OFFSET);
             }else{
                 i=getWidth()/squareSize+1;
             }
@@ -183,10 +174,51 @@ public class main extends JFrame implements ActionListener, MouseListener
         //Has to be done twice due to the chance of differing y and x sizes
         for(int i=0;i<=getHeight()/squareSize;i++){
             if(!(i>pipesArray[0].length)){
-                g.drawLine(0, i*(squareSize)+Y_OFFSET, xSize*squareSize+X_OFFSET, i*(squareSize)+Y_OFFSET);
+                g.drawLine(X_OFFSET, i*(squareSize)+Y_OFFSET, xSize*squareSize+X_OFFSET, i*(squareSize)+Y_OFFSET);
             }else{
                 i=getHeight()/squareSize+1;
             }
+        }
+        //This renders the pipes. It is a bit laggy
+        try{
+            for(int i=0;i<width/squareSize;i++){
+                for(int j=0;j<height/squareSize;j++){
+                    boolean squareHere=false;
+                    for(int k=0;k<SQUARE_SIDES;k++){
+                        if(squareHere){
+                            //Requires try catch due to file selection of the draw image
+                            //I cannot use icons as you cannot change their size, dispite the fact that it is laggier
+
+                            if(pipesArray[i+x][j+y].pipeThere(k)){
+                                //ImageIcon pipeImage;
+                                Image pipeImage;
+                                if(pipesArray[i+x][j+y].isWaterHere()){
+                                    //pipeImage=new ImageIcon("pipe"+k+"flooded.png");
+                                    pipeImage=ImageIO.read(new File("pipe"+k+"flooded.png"));
+                                }else{
+                                    //pipeImage=new ImageIcon("pipe"+k+".png");
+                                    pipeImage=ImageIO.read(new File("pipe"+k+".png"));
+                                }
+                                g2.drawImage(pipeImage,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET,squareSize,squareSize,this);
+                            }else{
+
+                                Image pipeImage=ImageIO.read(new File("nopipe"+k+".png"));
+                                g2.drawImage(pipeImage,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET,squareSize,squareSize,this);
+
+                                /*ImageIcon pipeImage=new ImageIcon("nopipe"+k+".png");
+                                pipeImage.paintIcon(this,g,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET);*/
+                            }
+
+                        }else if (pipesArray[i+x][j+y].pipeThere(k)){
+                            squareHere=true;
+                            k=-1;
+                        }
+
+                    }
+                }
+            }
+        }catch (java.io.IOException ioe){
+            ioe.printStackTrace();
         }
     }
     //Finds what item is clicked in the menu
@@ -223,15 +255,15 @@ public class main extends JFrame implements ActionListener, MouseListener
         if(e.getButton() == MouseEvent.BUTTON1){
             currentLeftClick=false;
             if(!floodMode){
-            int xMouse=e.getX()-X_OFFSET;
-            int yMouse=e.getY()-Y_OFFSET;
-            if(xMouse>0&&yMouse>0){
-                fillPipeDrag(xClick,yClick,xMouse,yMouse);
+                int xMouse=e.getX()-X_OFFSET;
+                int yMouse=e.getY()-Y_OFFSET;
+                if(xMouse>0&&yMouse>0){
+                    fillPipeDrag(xClick,yClick,xMouse,yMouse);
+                }
             }
         }
-            repaint();
-        }
         else if(e.getButton() == MouseEvent.BUTTON3){currentRightClick=false;}
+        repaint();
     }
     //Processes the stuff for when there is a click
     public void mousePressed(MouseEvent e){
@@ -251,13 +283,13 @@ public class main extends JFrame implements ActionListener, MouseListener
                         selectedNode.flood(!selectedNode.isWaterHere());
                         //No longer deactivation floodmode, as per review 
                     }else{
+                        //This section is outdated
                         //selectedNode.swapPipe(side);
                         //selectedNode.floodNodeIfShouldBe(side);
                         yClick=yMouse;
                         xClick=xMouse;
                     }
                 }
-                repaint();
                 currentLeftClick=true;
             }
         }
@@ -272,8 +304,10 @@ public class main extends JFrame implements ActionListener, MouseListener
     //per click which is bad if it only should go once
     public void mouseClicked(MouseEvent e){}
 
-    //This function may be obsolete
-    
+    //This function may be obsolete, however I have found a use case which while it would be more effeint for the user if 
+    //I write a specialised function for it, however that is not time effeicent for me, so I will be using this (for pipe
+    //dragging if only 1 tile is dragged)
+
     //Returns the side of the square that is clicked, 0 being top, going clockwise, left being 3
     int subSquares(int yClicked, int xClicked, int squareSize){
         //It is possible to make this slightly faster by splitting the left
@@ -318,16 +352,29 @@ public class main extends JFrame implements ActionListener, MouseListener
     }
     //Swaps the pipes if they are dragged over
     public void fillPipeDrag(int xNode1,int yNode1,int xNode2,int yNode2){
-        if(Math.abs(xNode1-xNode2)>Math.abs(yNode1-yNode2)){
+        //Gets the x and y of the location. I have to do this as I need to see if it is dragged across tiles, this is relitiv
+        int xNode1Location=xNode1/squareSize;
+        int xNode2Location=xNode2/squareSize;
+        int yNode1Location=yNode1/squareSize;
+        int yNode2Location=yNode2/squareSize;
+
+        int numberOfTilesOnX=Math.abs(xNode1Location-xNode2Location);
+        int numberOfTilesOnY=Math.abs(yNode1Location-yNode2Location);
+
+        if(numberOfTilesOnX>numberOfTilesOnY){
             //'Drags' the x
-            if(xNode1<xNode2){
-                pipeLine(xNode1,xNode2,yNode1,yNode1,true);
+            if(xNode1Location<xNode2Location){
+                pipeLine(xNode1,xNode2,yNode1,yNode1,true);   
             }else{
                 pipeLine(xNode2,xNode1,yNode2,yNode2,true);
             }
+        }else if(numberOfTilesOnX==numberOfTilesOnY){
+            //If there is only 1 tile
+            pipeNode selectedNode=pipesArray[xNode1Location+x][yNode1Location+y];
+            selectedNode.swapPipe(subSquares(yNode1%squareSize,xNode1%squareSize,squareSize));
         }else{
             //'Drags' the y
-            if(yNode1<yNode2){
+            if(yNode1Location<yNode2Location){
                 pipeLine(xNode1,xNode1,yNode1,yNode2,false);
             }else{
                 pipeLine(xNode2,xNode2,yNode2,yNode1,false);
@@ -347,9 +394,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         //Initialises the directions
         int [] directions=new int[2];
 
-        
         boolean stateToConvertTo; 
-        
         int endCoordenate;
         int startCoordenate;
         //This initalises all the varible that depend on whether the 'drag' is on the x direction or the y direction
@@ -382,14 +427,14 @@ public class main extends JFrame implements ActionListener, MouseListener
             }else{
                 processEndNodes(false,directions[1],secondNode,-(SQUARE_SIDES/2),stateToConvertTo);
             }
-            
+
             endCoordenate=secondNode.xLocation();
             startCoordenate=xFirst+1;
         }else{
             //The directions of the y
             directions[0]=SQUARE_SIDES/2-2;
             directions[1]=SQUARE_SIDES/2;
-            
+
             //x is the same as the first node to 'lock' in a line
             secondNode=pipesArray[x1/squareSize+x][y2/squareSize+y];
 
