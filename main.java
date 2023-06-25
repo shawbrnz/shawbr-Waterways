@@ -2,7 +2,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v22 - 22/6
+ * @v24 - 24/6
  * 
  * Need to:
  * 2- CLEAN UP!
@@ -28,12 +28,12 @@ import javax.imageio.ImageIO;
 import java.io.File;
 public class main extends JFrame implements ActionListener, MouseListener
 {
-    //Offset the grid is from the UI
+    //Offset the grid is from the UI. I do not know any way of doing this automatically
     final int X_OFFSET=0;
-    final int Y_OFFSET=50;
-    //Number of sides on a square (No magic numbers)
+    final int Y_OFFSET=60;
+    //Number of sides on a square (No 'magic' numbers)
     final int SQUARE_SIDES=4;
-    //Name of the window
+    //Name of the window (Likely not used)
     final String WINDOW_TITLE="Brendan Shaw's Waterways Project";
 
     //Initalising varibles. Note these are not finals as I plan for the user to be able to modify these
@@ -65,19 +65,23 @@ public class main extends JFrame implements ActionListener, MouseListener
     final String MOVEMENT_MENU_NAME="Movement";
     final String[] MOVEMENT_MENU_ITEMS={"Up","Left","Right","Down"};
     final char[] MOVEMENT_MENU_SHORTCUT = {'w','a','d','s'};
-    
-    
+
     //Frame and Panel init
-    JFrame frame = new JFrame(WINDOW_TITLE);
-        JPanel panel = new JPanel();
-        
+    //JFrame frame = new JFrame(WINDOW_TITLE);
+    JPanel panel = new JPanel();
+    
+    //Image initialising. Not finials because they have to be defined in a try catch
+    final int NUMBER_OF_PIPE_TYPES=3;
+    Image[][] imageOfPipe= new Image[NUMBER_OF_PIPE_TYPES][SQUARE_SIDES];
+    final String[] PIPE_TYPE_NAME = {"Regular","End","Flooded"};
+    
     public main()
     {
         //Finish init
         System.out.println(WINDOW_TITLE);
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        frame.setPreferredSize(screenSize);
-        
+        this.setPreferredSize(screenSize);
+
         //Menu
 
         //NEEED TO CLEAN
@@ -92,12 +96,14 @@ public class main extends JFrame implements ActionListener, MouseListener
         menuBar.add(actionMenu);
         movementMenu=new JMenu(MOVEMENT_MENU_NAME);
         menuBar.add(movementMenu);
+        //Actions
         for(int i=0;i<ACTION_MENU_ITEMS.length;i++){
             menuItem=new JMenuItem(ACTION_MENU_ITEMS[i]);
             menuItem.addActionListener(this);
             menuItem.setAccelerator(KeyStroke.getKeyStroke(ACTION_MENU_SHORTCUT[i]));
             actionMenu.add(menuItem);
         }
+        //Movements
         for(int i=0;i<MOVEMENT_MENU_ITEMS.length;i++){
             menuItem=new JMenuItem(MOVEMENT_MENU_ITEMS[i]);
             menuItem.addActionListener(this);
@@ -107,19 +113,20 @@ public class main extends JFrame implements ActionListener, MouseListener
 
         //Canvas init
         Canvas myGraphic=new Canvas();
-        panel.add(myGraphic);
+        
         addMouseListener(this);
         this.setSize(screenSize.width,screenSize.height);
+        panel.add(myGraphic);
+        this.pack();
         this.toFront(); 
         this.setVisible(true);
-        repaint();
+        //this.add(panel);
+        this.show();
 
-        frame.add(panel);
-        frame.show();
-        
         //Pipe init
         for(int i=0;i<pipesArray.length;i++){
             for(int j=0;j<pipesArray[i].length;j++){
+                //This gives the ids of each node, for debug
                 pipesArray[i][j]=new pipeNode();
                 pipesArray[i][j].giveLocation(i,j);
             }
@@ -141,7 +148,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                     adjacentLocations[1]=i-1;
                     adjacentLocations[0]=i+1;
                 }
-                //Same thing repeated for j
+                //Same thing repeated for j,y
                 if(j==0){
                     adjacentLocations[3]=ySize-1;
                     adjacentLocations[2]=j+1;
@@ -156,8 +163,18 @@ public class main extends JFrame implements ActionListener, MouseListener
                 pipesArray[i][j].setAdjacentPipeNode(adjacentPipes);
             }
         }
+        try{
+            for(int i=0; i<NUMBER_OF_PIPE_TYPES; i++){
+                for(int j=0; j<imageOfPipe[i].length; j++){
+                    imageOfPipe[i][j]=ImageIO.read(new File("pipe"+j+PIPE_TYPE_NAME[i]+".png"));
+                }
+            }
+        }catch (java.io.IOException ioe){
+            ioe.printStackTrace();
+            System.out.println("Error, file is missing");
+        }
     }
-    //This renders the grid
+    //Renders everything
     public void paint (Graphics g){
         super.paint(g);
         Graphics2D g2=(Graphics2D)g;
@@ -179,8 +196,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                 i=getHeight()/squareSize+1;
             }
         }
-        //This renders the pipes. It is a bit laggy
-        try{
+        //This renders the pipes. It is a bit laggy, I will define it in main
             for(int i=0;i<width/squareSize;i++){
                 for(int j=0;j<height/squareSize;j++){
                     boolean squareHere=false;
@@ -190,25 +206,18 @@ public class main extends JFrame implements ActionListener, MouseListener
                             //I cannot use icons as you cannot change their size, dispite the fact that it is laggier
 
                             if(pipesArray[i+x][j+y].pipeThere(k)){
-                                //ImageIcon pipeImage;
                                 Image pipeImage;
                                 if(pipesArray[i+x][j+y].isWaterHere()){
-                                    //pipeImage=new ImageIcon("pipe"+k+"flooded.png");
-                                    pipeImage=ImageIO.read(new File("pipe"+k+"flooded.png"));
+                                    pipeImage=imageOfPipe[2][k];
                                 }else{
-                                    //pipeImage=new ImageIcon("pipe"+k+".png");
-                                    pipeImage=ImageIO.read(new File("pipe"+k+".png"));
+                                    pipeImage=imageOfPipe[0][k];
                                 }
                                 g2.drawImage(pipeImage,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET,squareSize,squareSize,this);
                             }else{
 
-                                Image pipeImage=ImageIO.read(new File("nopipe"+k+".png"));
+                                Image pipeImage=imageOfPipe[1][k];
                                 g2.drawImage(pipeImage,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET,squareSize,squareSize,this);
-
-                                /*ImageIcon pipeImage=new ImageIcon("nopipe"+k+".png");
-                                pipeImage.paintIcon(this,g,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET);*/
                             }
-
                         }else if (pipesArray[i+x][j+y].pipeThere(k)){
                             squareHere=true;
                             k=-1;
@@ -217,9 +226,6 @@ public class main extends JFrame implements ActionListener, MouseListener
                     }
                 }
             }
-        }catch (java.io.IOException ioe){
-            ioe.printStackTrace();
-        }
     }
     //Finds what item is clicked in the menu
     public void actionPerformed(ActionEvent e){
