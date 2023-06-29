@@ -2,7 +2,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v25 - 29/6
+ * @v26 - 30/6
  * 
  * Need to:
  * 3- CLEAN UP!
@@ -66,16 +66,26 @@ public class main extends JFrame implements ActionListener, MouseListener
     final String MOVEMENT_MENU_NAME="Movement";
     final String[] MOVEMENT_MENU_ITEMS={"Up","Left","Right","Down"};
     final char[] MOVEMENT_MENU_SHORTCUT = {'w','a','d','s'};
-
+    //Menu 3- Saveing
+    //I am thinking about redoing this entire system as it is really bad, however until then it will be ugly
+    final String SAVE_MENU_NAME="Save/load";
+    final String[] SAVE_MENU_ITEMS={"Save","Load"};
+    final char[] SAVE_MENU_SHORTCUT = {'k','l'};
+    
     //Frame and Panel init
     //JFrame frame = new JFrame(WINDOW_TITLE);
     JPanel panel = new JPanel();
 
-    //Image initialising. Not finials because they have to be defined in a try catch
+    //Image initialising. Not finials because they have to be defined in a try catch due to files
     final int NUMBER_OF_PIPE_TYPES=3;
     Image[][] imageOfPipe= new Image[NUMBER_OF_PIPE_TYPES][SQUARE_SIDES];
     final String[] PIPE_TYPE_NAME = {"Regular","End","Flooded"};
-
+    
+    //Dialog messages. I am defining them here so I can easily change them later. They are arrays based on
+    //each dialog, order being title>message
+    final String[] PIPE_SIZE_CHANGE_MESSAGE={"Pipe Size","What do you wish to change the pipe size to?"};
+    final String INVALID_INPUT_MESSAGE="Invaild input, please try again!";
+    
     public main()
     {
         //Finish init
@@ -91,12 +101,15 @@ public class main extends JFrame implements ActionListener, MouseListener
         JMenuItem menuItem;
         JMenu actionMenu;
         JMenu movementMenu;
+        JMenu saveMenu;
         menuBar=new JMenuBar();
         this.setJMenuBar(menuBar);
         actionMenu=new JMenu(ACTION_MENU_NAME);
         menuBar.add(actionMenu);
         movementMenu=new JMenu(MOVEMENT_MENU_NAME);
         menuBar.add(movementMenu);
+        saveMenu=new JMenu(SAVE_MENU_NAME);
+        menuBar.add(saveMenu);
         //Actions
         for(int i=0;i<ACTION_MENU_ITEMS.length;i++){
             menuItem=new JMenuItem(ACTION_MENU_ITEMS[i]);
@@ -110,6 +123,13 @@ public class main extends JFrame implements ActionListener, MouseListener
             menuItem.addActionListener(this);
             menuItem.setAccelerator(KeyStroke.getKeyStroke(MOVEMENT_MENU_SHORTCUT[i]));
             movementMenu.add(menuItem);
+        }
+        //Saaaaaaaaaaaaaaaaves
+        for(int i=0;i<SAVE_MENU_ITEMS.length;i++){
+            menuItem=new JMenuItem(SAVE_MENU_ITEMS[i]);
+            menuItem.addActionListener(this);
+            menuItem.setAccelerator(KeyStroke.getKeyStroke(SAVE_MENU_SHORTCUT[i]));
+            saveMenu.add(menuItem);
         }
 
         //Canvas init
@@ -233,6 +253,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         String itemClicked=e.getActionCommand();
         //Added this so it doesnt have to loop more times if it has alrady found it
         boolean actionFound=false;
+        boolean movementFound=false;
         //Actions
         for(int i=0;i<ACTION_MENU_ITEMS.length;i++){
             if(ACTION_MENU_ITEMS[i]==itemClicked){
@@ -246,8 +267,17 @@ public class main extends JFrame implements ActionListener, MouseListener
             for(int i=0;i<MOVEMENT_MENU_ITEMS.length;i++){
                 if(MOVEMENT_MENU_ITEMS[i]==itemClicked){
                     movement(i);
-                    actionFound=true;
+                    movementFound=true;
                     i=MOVEMENT_MENU_ITEMS.length;
+                }
+            }
+        }
+        //Saves. This is a really bad system I need to redo this once I have finished the project
+        if(!actionFound&&!movementFound){
+            for(int i=0;i<SAVE_MENU_ITEMS.length;i++){
+                if(SAVE_MENU_ITEMS[i]==itemClicked){
+                    saveMenuInputs(i);
+                    i=SAVE_MENU_ITEMS.length;
                 }
             }
         }
@@ -388,7 +418,7 @@ public class main extends JFrame implements ActionListener, MouseListener
             }
         }
     }
-    //Puts a line of pipes down
+    //Puts a line of pipes down. Very ugly, need to clean.
     public void pipeLine(int x1,int x2,int y1,int y2, boolean xDirection){
         //Finds the first node
         pipeNode firstNode=pipesArray[x1/squareSize+x][y1/squareSize+y];
@@ -500,17 +530,28 @@ public class main extends JFrame implements ActionListener, MouseListener
                 floodMode=!floodMode;
                 break;
             case 1:
+                //For the changing pipe size, I decided to do it here because it would be messier doing it elsewhere. If there were more actions
+                //being processed here, then I would likely 
+                
+                //Asking this here, so I can add an error message to the dialog box
+                String dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1], squareSize+"");
                 //Keeps looping to request the new pipe size if they input an invalid case 
                 boolean keepLoop=true;
                 while(keepLoop){
-                    String dialogInput=openDialog("Pipe size", "What do you want to change the size of the pipe to?", squareSize+"");
-                    if(dialogInput.matches("\\d+")){//
+                    if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string
                         squareSize=Integer.parseInt(dialogInput);
                         keepLoop=false;
+                    }else{
+                        dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1]+"\n"+INVALID_INPUT_MESSAGE, squareSize+"");
                     }
                 }
+                repaint();
+                break;
+            case 2:
+                System.out.println("DEBUG");
                 break;
             default:
+                //This is kept in the terminal because it should be impossible. I will likely remove it.
                 System.out.println("Error, not an action");
         }
     }
@@ -535,9 +576,48 @@ public class main extends JFrame implements ActionListener, MouseListener
         }
         repaint();
     }
+    //Processes the save menu inputs
+    public void saveMenuInputs(int saveInput){
+        switch(saveInput){
+                //Unlike actions, I have these do to functions because it would be too messy otherwise.
+            case 0:
+                save();
+                break;
+            case 1:
+                load();
+                break;
+            default:
+                System.out.println("Error, not a save action");
+        }
+        repaint();
+    }
     //Opens a dialog box to get input. Returns a string rather than an int so I can use this to get text later
     public String openDialog(String windowTitle, String prompt, String defaultText){
-        //I know this is 1 line, but it is signifcantly easier to use this function as it allows me to customise this box easily
+        //I know this is 1 line, but it is signifcantly easier to use this function as it allows me to customise this box easily, 
+        //and also makes the code cleaner as I only have 3 varible inputs
         return (String)JOptionPane.showInputDialog(this,prompt,windowTitle,JOptionPane.PLAIN_MESSAGE,null,null,defaultText);
     } 
+    //Saves a network
+    public void save(){
+    
+    }
+    //Loads a saved network
+    public void load(){
+    
+    }
+    
+    /*Each save needs-
+    
+     * Meta data-
+     * x and y size
+     * x and y location
+     * //Note, Im not storing flood mode or pipe size
+     * //First flood mode has a very small impact on the user
+     * //And pipe size will be saved in a seperate file
+     * Pipenodes-
+     * Each of the 4 sides
+     * Whether it is flooded or not
+     * //Note, Im not storing adjacent node or their locations
+     * //I will be processing and assigning these on load
+    */
 }
