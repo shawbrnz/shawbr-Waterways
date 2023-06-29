@@ -2,11 +2,12 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v24 - 24/6
+ * @v25 - 29/6
  * 
  * Need to:
- * 2- CLEAN UP!
- * 1- File stuff
+ * 3- CLEAN UP!
+ * 2- File stuff
+ * 1- Text box
  */
 
 //Importing
@@ -58,8 +59,8 @@ public class main extends JFrame implements ActionListener, MouseListener
     boolean floodMode=false;
     //Menu 1- Actions
     final String ACTION_MENU_NAME="Actions";
-    final String[] ACTION_MENU_ITEMS={"Change water"};
-    final char[] ACTION_MENU_SHORTCUT = {'f'};
+    final String[] ACTION_MENU_ITEMS={"Change water","Change Pipe Size"};
+    final char[] ACTION_MENU_SHORTCUT = {'f','p'};
     //Menu 2- Movement
     //I tried to use keyboard listener but I couldn't get them working so I decided to use hotkeys
     final String MOVEMENT_MENU_NAME="Movement";
@@ -69,12 +70,12 @@ public class main extends JFrame implements ActionListener, MouseListener
     //Frame and Panel init
     //JFrame frame = new JFrame(WINDOW_TITLE);
     JPanel panel = new JPanel();
-    
+
     //Image initialising. Not finials because they have to be defined in a try catch
     final int NUMBER_OF_PIPE_TYPES=3;
     Image[][] imageOfPipe= new Image[NUMBER_OF_PIPE_TYPES][SQUARE_SIDES];
     final String[] PIPE_TYPE_NAME = {"Regular","End","Flooded"};
-    
+
     public main()
     {
         //Finish init
@@ -113,7 +114,7 @@ public class main extends JFrame implements ActionListener, MouseListener
 
         //Canvas init
         Canvas myGraphic=new Canvas();
-        
+
         addMouseListener(this);
         this.setSize(screenSize.width,screenSize.height);
         panel.add(myGraphic);
@@ -197,35 +198,35 @@ public class main extends JFrame implements ActionListener, MouseListener
             }
         }
         //This renders the pipes. It is a bit laggy, I will define it in main
-            for(int i=0;i<width/squareSize;i++){
-                for(int j=0;j<height/squareSize;j++){
-                    boolean squareHere=false;
-                    for(int k=0;k<SQUARE_SIDES;k++){
-                        if(squareHere){
-                            //Requires try catch due to file selection of the draw image
-                            //I cannot use icons as you cannot change their size, dispite the fact that it is laggier
+        for(int i=0;i<width/squareSize;i++){
+            for(int j=0;j<height/squareSize;j++){
+                boolean squareHere=false;
+                for(int k=0;k<SQUARE_SIDES;k++){
+                    if(squareHere){
+                        //Requires try catch due to file selection of the draw image
+                        //I cannot use icons as you cannot change their size, dispite the fact that it is laggier
 
-                            if(pipesArray[i+x][j+y].pipeThere(k)){
-                                Image pipeImage;
-                                if(pipesArray[i+x][j+y].isWaterHere()){
-                                    pipeImage=imageOfPipe[2][k];
-                                }else{
-                                    pipeImage=imageOfPipe[0][k];
-                                }
-                                g2.drawImage(pipeImage,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET,squareSize,squareSize,this);
+                        if(pipesArray[i+x][j+y].pipeThere(k)){
+                            Image pipeImage;
+                            if(pipesArray[i+x][j+y].isWaterHere()){
+                                pipeImage=imageOfPipe[2][k];
                             }else{
-
-                                Image pipeImage=imageOfPipe[1][k];
-                                g2.drawImage(pipeImage,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET,squareSize,squareSize,this);
+                                pipeImage=imageOfPipe[0][k];
                             }
-                        }else if (pipesArray[i+x][j+y].pipeThere(k)){
-                            squareHere=true;
-                            k=-1;
-                        }
+                            g2.drawImage(pipeImage,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET,squareSize,squareSize,this);
+                        }else{
 
+                            Image pipeImage=imageOfPipe[1][k];
+                            g2.drawImage(pipeImage,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET,squareSize,squareSize,this);
+                        }
+                    }else if (pipesArray[i+x][j+y].pipeThere(k)){
+                        squareHere=true;
+                        k=-1;
                     }
+
                 }
             }
+        }
     }
     //Finds what item is clicked in the menu
     public void actionPerformed(ActionEvent e){
@@ -499,6 +500,15 @@ public class main extends JFrame implements ActionListener, MouseListener
                 floodMode=!floodMode;
                 break;
             case 1:
+                //Keeps looping to request the new pipe size if they input an invalid case 
+                boolean keepLoop=true;
+                while(keepLoop){
+                    String dialogInput=openDialog("Pipe size", "What do you want to change the size of the pipe to?", squareSize+"");
+                    if(dialogInput.matches("\\d+")){//
+                        squareSize=Integer.parseInt(dialogInput);
+                        keepLoop=false;
+                    }
+                }
                 break;
             default:
                 System.out.println("Error, not an action");
@@ -525,4 +535,9 @@ public class main extends JFrame implements ActionListener, MouseListener
         }
         repaint();
     }
+    //Opens a dialog box to get input. Returns a string rather than an int so I can use this to get text later
+    public String openDialog(String windowTitle, String prompt, String defaultText){
+        //I know this is 1 line, but it is signifcantly easier to use this function as it allows me to customise this box easily
+        return (String)JOptionPane.showInputDialog(this,prompt,windowTitle,JOptionPane.PLAIN_MESSAGE,null,null,defaultText);
+    } 
 }
