@@ -2,7 +2,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v26 - 30/6
+ * @v27 - 17/7
  * 
  * Need to:
  * 3- CLEAN UP!
@@ -27,6 +27,8 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
+import java.io.IOException;
+import java.io.FileWriter;
 public class main extends JFrame implements ActionListener, MouseListener
 {
     //Offset the grid is from the UI. I do not know any way of doing this automatically
@@ -71,7 +73,13 @@ public class main extends JFrame implements ActionListener, MouseListener
     final String SAVE_MENU_NAME="Save/load";
     final String[] SAVE_MENU_ITEMS={"Save","Load"};
     final char[] SAVE_MENU_SHORTCUT = {'k','l'};
-    
+
+    //Save info
+    final String SAVE_DIRECTORY="\\Saves\\";
+    final String SAVE_SEPERATOR=",";
+    final String SAVE_FILE_TYPE=".txt";//I will be using a txt because time constraints
+    final int[] PRIME_NUMBERS={2,3,5,7};//This is used for saving stuff I will explain later
+
     //Frame and Panel init
     //JFrame frame = new JFrame(WINDOW_TITLE);
     JPanel panel = new JPanel();
@@ -80,12 +88,14 @@ public class main extends JFrame implements ActionListener, MouseListener
     final int NUMBER_OF_PIPE_TYPES=3;
     Image[][] imageOfPipe= new Image[NUMBER_OF_PIPE_TYPES][SQUARE_SIDES];
     final String[] PIPE_TYPE_NAME = {"Regular","End","Flooded"};
-    
+
     //Dialog messages. I am defining them here so I can easily change them later. They are arrays based on
     //each dialog, order being title>message
     final String[] PIPE_SIZE_CHANGE_MESSAGE={"Pipe Size","What do you wish to change the pipe size to?"};
+    //These are for the save 
+    final String[] SAVE_MESSAGE={"Saves","What would you like to call your save?"};
+    //Genertic error for invaild input
     final String INVALID_INPUT_MESSAGE="Invaild input, please try again!";
-    
     public main()
     {
         //Finish init
@@ -531,14 +541,14 @@ public class main extends JFrame implements ActionListener, MouseListener
                 break;
             case 1:
                 //For the changing pipe size, I decided to do it here because it would be messier doing it elsewhere. If there were more actions
-                //being processed here, then I would likely 
-                
+                //being processed here, then I would likely. I might move this, if oyu are reading this then I did not 
+
                 //Asking this here, so I can add an error message to the dialog box
                 String dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1], squareSize+"");
                 //Keeps looping to request the new pipe size if they input an invalid case 
                 boolean keepLoop=true;
                 while(keepLoop){
-                    if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string
+                    if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad.
                         squareSize=Integer.parseInt(dialogInput);
                         keepLoop=false;
                     }else{
@@ -599,25 +609,56 @@ public class main extends JFrame implements ActionListener, MouseListener
     } 
     //Saves a network
     public void save(){
-    
+        String fileName=openDialog(SAVE_MESSAGE[0], SAVE_MESSAGE[1], "");
+        try{
+            File saveFile=new File (SAVE_DIRECTORY+fileName+SAVE_FILE_TYPE);
+            FileWriter fileWriter=new FileWriter(saveFile);
+            //I am creating a singular string to save. I know this could cause issue in complex systems but that is mostly negated with the pipeNode compression,
+            //and I dont really have time to do osmething else. 
+            //I am using multiple lines as well to make the code easier to read, however the metadata can all be one line
+            String saveData=xSize+SAVE_SEPERATOR+ySize;//x and y size
+            saveData+=SAVE_SEPERATOR+x+SAVE_SEPERATOR+y;//the location
+            saveData+=SAVE_SEPERATOR+squareSize;//the size of pipes
+            //Now for the pipe nodes
+            for(int i=0;i<pipesArray.length;i++){
+                for(int j=0;j<pipesArray[i].length;j++){
+                    saveData+=SAVE_SEPERATOR+i+SAVE_SEPERATOR+j;//Locations
+                    //I am using prime numbers to save the states of each node of the pipe
+                    int primePipeState=1;//Needs to be equal to 1 so it can be multiplied
+                    for(int k=0;k<SQUARE_SIDES;k++){
+                        if(pipesArray[i][j].pipeThere(k)){
+                            primePipeState*=PRIME_NUMBERS[k];
+                        }
+                    }
+                    saveData+=SAVE_SEPERATOR+primePipeState;//If my code is bad, this should be a 1, however that should not happen
+                    saveData+=SAVE_SEPERATOR+pipesArray[i][j].isWaterHere();
+                }
+            }
+            fileWriter.write(saveData);
+            fileWriter.flush();
+            fileWriter.close();
+        } catch(IOException e){
+            System.out.println(e);
+        }
     }
     //Loads a saved network
     public void load(){
-    
+
     }
-    
+
     /*Each save needs-
-    
+
      * Meta data-
      * x and y size
      * x and y location
-     * //Note, Im not storing flood mode or pipe size
-     * //First flood mode has a very small impact on the user
-     * //And pipe size will be saved in a seperate file
-     * Pipenodes-
-     * Each of the 4 sides
-     * Whether it is flooded or not
+     * pipe size 
+     * //Note, Im not storing flood mode
+     * //First flood mode has a very small impact on the user, and can be easily reactivated
+     * //And pipe size will no longer be saved in a seperate file, and as such will now also be a part of the meta data due to time I have left
+     * Pipenodes- //Will need location, because the user is likely to have majority of the file will be blank, thus this will compress the file more
+     * Each of the 4 sides - //I will be using primes to effeicently save this, which while will be slower, it will be more space effecient
+     * Whether it is flooded or not- //Will be a 1/0
      * //Note, Im not storing adjacent node or their locations
      * //I will be processing and assigning these on load
-    */
+     */
 }
