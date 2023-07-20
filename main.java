@@ -2,7 +2,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v28 - 20/7
+ * @v29 - 21/7
  * 
  * Need to:
  * 2- CLEAN UP!
@@ -74,7 +74,7 @@ public class main extends JFrame implements ActionListener, MouseListener
     final char[] SAVE_MENU_SHORTCUT = {'k','l'};
 
     //Save info
-    final String SAVE_DIRECTORY="";//This is blank as I wasnt able to get it working
+    final String SAVE_DIRECTORY=System.getProperty("user.dir")+"\\Saves\\";//This gets the location of the save file
     final String SAVE_SEPERATOR=",";
     final String SAVE_FILE_TYPE=".txt";//I will be using a txt because time constraints
     final int[] PRIME_NUMBERS={2,3,5,7};//This is used for saving stuff I will explain later
@@ -94,11 +94,12 @@ public class main extends JFrame implements ActionListener, MouseListener
     final String[] PIPE_TYPE_NAME = {"Regular","End","Flooded"};
 
     //Dialog messages. I am defining them here so I can easily change them later. They are arrays based on
-    //each dialog, order being title>message
+    //each dialog, order being title>message.
     final String[] PIPE_SIZE_CHANGE_MESSAGE={"Pipe Size","What do you wish to change the pipe size to?"};
     //These are for the save 
     final String[] SAVE_MESSAGE={"Saves","What would you like to call your save?"};
-    final String[] LOAD_MESSAGE={"Loading","What would you like to load?"};
+    final String[] LOAD_MESSAGE={"Loading","What would you like to load? The avalible files are: \n"};
+    final String[] FILE_ALREADY_MESSAGE={"File already exists","There is already a save file with this name,\nwould you like to override?"};
     //Genertic error for invaild input
     final String INVALID_INPUT_MESSAGE="Invaild input, please try again!";
     public main()
@@ -158,10 +159,10 @@ public class main extends JFrame implements ActionListener, MouseListener
         this.setVisible(true);
         //this.add(panel);
         this.show();
-        
+
         //Makes the actual pipe network
         remakeNetwork();
-        
+
         //Gets the images of the pipes
         try{
             for(int i=0; i<NUMBER_OF_PIPE_TYPES; i++){
@@ -182,6 +183,7 @@ public class main extends JFrame implements ActionListener, MouseListener
             for(int j=0;j<pipesArray[i].length;j++){
                 //Creates each pipeNode
                 pipesArray[i][j]=new pipeNode();
+                pipesArray[i][j].giveLocation(i,j);//This is used for both debugging and identifying the locations for the pipe dragging
             }
         }
         //Adjacent pipe locations
@@ -220,7 +222,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                 pipesArray[i][j].setAdjacentPipeNode(adjacentPipes);
             }
         }
-        
+
         repaint();
     }
     //Renders everything
@@ -433,6 +435,7 @@ public class main extends JFrame implements ActionListener, MouseListener
             }else{
                 pipeLine(xNode2,xNode1,yNode2,yNode2,true);
             }
+
         }else if(numberOfTilesOnX==numberOfTilesOnY){
             //If there is only 1 tile
             pipeNode selectedNode=pipesArray[xNode1Location+x][yNode1Location+y];
@@ -444,7 +447,9 @@ public class main extends JFrame implements ActionListener, MouseListener
             }else{
                 pipeLine(xNode2,xNode2,yNode2,yNode1,false);
             }
+
         }
+
     }
     //Puts a line of pipes down. Very ugly, need to clean.
     public void pipeLine(int x1,int x2,int y1,int y2, boolean xDirection){
@@ -625,13 +630,31 @@ public class main extends JFrame implements ActionListener, MouseListener
         //and also makes the code cleaner as I only have 3 varible inputs
         return (String)JOptionPane.showInputDialog(this,prompt,windowTitle,JOptionPane.PLAIN_MESSAGE,null,null,defaultText);
     } 
+    //Opens a dialog box which is two button, consisting of a yes or no.
+    public boolean openBoolDialog(String windowTitle, String prompt){
+        //Very similar to above funciton, however they are different so its better to have two seperate functions. It returns an int but I need it boolean though
+        int input=JOptionPane.showConfirmDialog(this,prompt,windowTitle,JOptionPane.YES_NO_OPTION);
+        if(input==1){
+            return true;
+        }
+        return false;//By default it will return false
+    }
     //Saves a network
     public void save(){
+        boolean cancelSave=false;//This is the boolean that allows the user to cancel saving if it already exists or decides against saving
         String fileName=openDialog(SAVE_MESSAGE[0], SAVE_MESSAGE[1], "");
+        if(fileName==null){//If the user cancels saving while giving it a name
+            cancelSave=true;
+        }
         try{
             File saveFile=new File (SAVE_DIRECTORY+fileName+SAVE_FILE_TYPE);
             //Check to ensure the user wishes to override the file
-            if(saveFile.createNewFile()){
+            if(!saveFile.createNewFile()){
+                if(openBoolDialog(FILE_ALREADY_MESSAGE[0], FILE_ALREADY_MESSAGE[1])){//I need this to be seperate from the above if, or else it will ask if the user would like to override the file if it doesn't already exist
+                    cancelSave=true;
+                }
+            }
+            if(!cancelSave){
                 FileWriter fileWriter=new FileWriter(saveFile);
                 //I am creating a singular string to save. I know this could cause issue in complex systems but that is mostly negated with the pipeNode compression,
                 //and I dont really have time to do osmething else. 
@@ -667,15 +690,30 @@ public class main extends JFrame implements ActionListener, MouseListener
             }
         }catch(IOException e){
             System.out.println(e);
+            System.out.println(SAVE_DIRECTORY+fileName+SAVE_FILE_TYPE);
         }
     }
     //Loads a saved network
     public void load(){
-        String fileName=openDialog(LOAD_MESSAGE[0], LOAD_MESSAGE[1], "");
         try{
+            //First it finds all the saves avalible to ask the user
+            File saveFilesFolder=new File(SAVE_DIRECTORY);
+            File[] avalibleSaves=saveFilesFolder.listFiles();
+            String avalibleSavesNames="";
+            for(int i=0;i<avalibleSaves.length;i++){//Adds the avalible save files to a string to give to the user
+                avalibleSavesNames+=(avalibleSaves[i].getName().replace(SAVE_FILE_TYPE,"")+"\n");//Also removes the .txt for cleanliness 
+            }
+            String fileName;
+            if(avalibleSavesNames==""){
+                //This runs if there is no files avalible
+                fileName=openDialog(LOAD_MESSAGE[0], "This here is temp, \nI will add a thing soon that stops the loading", "");
+            }else{
+                fileName=openDialog(LOAD_MESSAGE[0], LOAD_MESSAGE[1]+avalibleSavesNames, "");            
+            }
             File saveFile=new File(SAVE_DIRECTORY+fileName+SAVE_FILE_TYPE);
             Scanner fileReader=new Scanner(saveFile);
             String[] saveData=fileReader.nextLine().split(SAVE_SEPERATOR);
+            
             //System.out.println(fileReader.nextLine());
             //Parses the string to an int, no need to check if it actually is an int as currently in try
             //I am using 'magic numbers' here, however these do not ever need to be changed, as more of these
