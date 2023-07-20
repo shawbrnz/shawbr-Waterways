@@ -2,11 +2,10 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v27 - 17/7
+ * @v28 - 20/7
  * 
  * Need to:
- * 3- CLEAN UP!
- * 2- File stuff
+ * 2- CLEAN UP!
  * 1- Text box
  */
 
@@ -44,13 +43,13 @@ public class main extends JFrame implements ActionListener, MouseListener
     //Size of squares
     int squareSize=100;
     //Number of squares. 
-    int xSize=1000;
-    int ySize=1000;
+    int xSize=100;
+    int ySize=100;
     int x=xSize/2;
     int y=ySize/2;
     //Array of the pipes. Third dimension is the edges (Note pipesArray is now 2d, however, some for loops
     //still use the third dimension as the side, so ill leave the comment here)
-    pipeNode [][] pipesArray=new pipeNode[xSize][ySize];
+    pipeNode [][] pipesArray;
     //To ensure it only runs once if clicked             
     boolean currentLeftClick=false;
     boolean currentRightClick=false;
@@ -75,10 +74,15 @@ public class main extends JFrame implements ActionListener, MouseListener
     final char[] SAVE_MENU_SHORTCUT = {'k','l'};
 
     //Save info
-    final String SAVE_DIRECTORY="\\Saves\\";
+    final String SAVE_DIRECTORY="";//This is blank as I wasnt able to get it working
     final String SAVE_SEPERATOR=",";
     final String SAVE_FILE_TYPE=".txt";//I will be using a txt because time constraints
     final int[] PRIME_NUMBERS={2,3,5,7};//This is used for saving stuff I will explain later
+    final int METADATA_SIZE=5;//This is the amount of data saved in save files that is not the pipe data
+    final int PIPEDATA_SIZE=4;//This is the amount of data saved in save files that is the pipe data
+    //These two are the values saved whether there is water or not
+    final int NO_WATER_INT=0;
+    final int YES_WATER_INT=1;
 
     //Frame and Panel init
     //JFrame frame = new JFrame(WINDOW_TITLE);
@@ -94,6 +98,7 @@ public class main extends JFrame implements ActionListener, MouseListener
     final String[] PIPE_SIZE_CHANGE_MESSAGE={"Pipe Size","What do you wish to change the pipe size to?"};
     //These are for the save 
     final String[] SAVE_MESSAGE={"Saves","What would you like to call your save?"};
+    final String[] LOAD_MESSAGE={"Loading","What would you like to load?"};
     //Genertic error for invaild input
     final String INVALID_INPUT_MESSAGE="Invaild input, please try again!";
     public main()
@@ -153,22 +158,41 @@ public class main extends JFrame implements ActionListener, MouseListener
         this.setVisible(true);
         //this.add(panel);
         this.show();
-
+        
+        //Makes the actual pipe network
+        remakeNetwork();
+        
+        //Gets the images of the pipes
+        try{
+            for(int i=0; i<NUMBER_OF_PIPE_TYPES; i++){
+                for(int j=0; j<imageOfPipe[i].length; j++){
+                    imageOfPipe[i][j]=ImageIO.read(new File("pipe"+j+PIPE_TYPE_NAME[i]+".png"));
+                }
+            }
+        }catch (java.io.IOException ioe){
+            ioe.printStackTrace();
+            System.out.println("Error, file is missing");
+        }
+    }
+    //Sets up a new network. Ported from old main function
+    public void remakeNetwork(){
+        pipesArray=new pipeNode[xSize][ySize];
         //Pipe init
         for(int i=0;i<pipesArray.length;i++){
             for(int j=0;j<pipesArray[i].length;j++){
-                //This gives the ids of each node, for debug
+                //Creates each pipeNode
                 pipesArray[i][j]=new pipeNode();
-                pipesArray[i][j].giveLocation(i,j);
             }
         }
+        //Adjacent pipe locations
         for(int i=0;i<pipesArray.length;i++){
             for(int j=0;j<pipesArray[i].length;j++){
                 int[] adjacentLocations=new int[SQUARE_SIDES];
                 //Not using switch because they are bad. (They dont allow variables)
                 //Edges loop around because it is much easier to code, and is a simple
                 //way to resolve the edge issue. The user would probably not experience
-                //it anyway
+                //it anyway, unless they are you. This is a bad way of doing this however
+                //it is more time effecient for me
                 if(i==0){
                     adjacentLocations[1]=xSize-1;
                     adjacentLocations[0]=i+1;
@@ -176,6 +200,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                     adjacentLocations[1]=i-1;
                     adjacentLocations[0]=0;
                 }else{
+                    //This is the line that is run regularly
                     adjacentLocations[1]=i-1;
                     adjacentLocations[0]=i+1;
                 }
@@ -187,6 +212,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                     adjacentLocations[3]=j-1;
                     adjacentLocations[2]=0;
                 }else{
+                    //This is the line that is run regularly
                     adjacentLocations[3]=j-1;
                     adjacentLocations[2]=j+1;
                 }
@@ -194,16 +220,8 @@ public class main extends JFrame implements ActionListener, MouseListener
                 pipesArray[i][j].setAdjacentPipeNode(adjacentPipes);
             }
         }
-        try{
-            for(int i=0; i<NUMBER_OF_PIPE_TYPES; i++){
-                for(int j=0; j<imageOfPipe[i].length; j++){
-                    imageOfPipe[i][j]=ImageIO.read(new File("pipe"+j+PIPE_TYPE_NAME[i]+".png"));
-                }
-            }
-        }catch (java.io.IOException ioe){
-            ioe.printStackTrace();
-            System.out.println("Error, file is missing");
-        }
+        
+        repaint();
     }
     //Renders everything
     public void paint (Graphics g){
@@ -612,53 +630,96 @@ public class main extends JFrame implements ActionListener, MouseListener
         String fileName=openDialog(SAVE_MESSAGE[0], SAVE_MESSAGE[1], "");
         try{
             File saveFile=new File (SAVE_DIRECTORY+fileName+SAVE_FILE_TYPE);
-            FileWriter fileWriter=new FileWriter(saveFile);
-            //I am creating a singular string to save. I know this could cause issue in complex systems but that is mostly negated with the pipeNode compression,
-            //and I dont really have time to do osmething else. 
-            //I am using multiple lines as well to make the code easier to read, however the metadata can all be one line
-            String saveData=xSize+SAVE_SEPERATOR+ySize;//x and y size
-            saveData+=SAVE_SEPERATOR+x+SAVE_SEPERATOR+y;//the location
-            saveData+=SAVE_SEPERATOR+squareSize;//the size of pipes
-            //Now for the pipe nodes
-            for(int i=0;i<pipesArray.length;i++){
-                for(int j=0;j<pipesArray[i].length;j++){
-                    saveData+=SAVE_SEPERATOR+i+SAVE_SEPERATOR+j;//Locations
-                    //I am using prime numbers to save the states of each node of the pipe
-                    int primePipeState=1;//Needs to be equal to 1 so it can be multiplied
-                    for(int k=0;k<SQUARE_SIDES;k++){
-                        if(pipesArray[i][j].pipeThere(k)){
-                            primePipeState*=PRIME_NUMBERS[k];
+            //Check to ensure the user wishes to override the file
+            if(saveFile.createNewFile()){
+                FileWriter fileWriter=new FileWriter(saveFile);
+                //I am creating a singular string to save. I know this could cause issue in complex systems but that is mostly negated with the pipeNode compression,
+                //and I dont really have time to do osmething else. 
+                //I am using multiple lines as well to make the code easier to read, however the metadata can all be one line
+                String saveData=xSize+SAVE_SEPERATOR+ySize;//x and y size
+                saveData+=SAVE_SEPERATOR+x+SAVE_SEPERATOR+y;//the location
+                saveData+=SAVE_SEPERATOR+squareSize;//the size of pipes
+                //Now for the pipe nodes
+                for(int i=0;i<pipesArray.length;i++){
+                    for(int j=0;j<pipesArray[i].length;j++){
+                        if(pipesArray[i][j].pipeThere()){
+                            saveData+=SAVE_SEPERATOR+i+SAVE_SEPERATOR+j;//Locations
+                            //I am using prime numbers to save the states of each node of the pipe
+                            int primePipeState=1;//Needs to be equal to 1 so it can be multiplied
+                            for(int k=0;k<SQUARE_SIDES;k++){
+                                if(pipesArray[i][j].pipeThere(k)){
+                                    primePipeState*=PRIME_NUMBERS[k];
+                                }
+                            }
+                            saveData+=SAVE_SEPERATOR+primePipeState;//If my code is bad, this should be a 1, however that should not happen
+                            //I save whether there is water or not using 1 and 0, as booleans are annoying
+                            int isWaterHereInt=NO_WATER_INT;
+                            if(pipesArray[i][j].isWaterHere()){
+                                isWaterHereInt=YES_WATER_INT;
+                            }
+                            saveData+=SAVE_SEPERATOR+isWaterHereInt;
                         }
                     }
-                    saveData+=SAVE_SEPERATOR+primePipeState;//If my code is bad, this should be a 1, however that should not happen
-                    saveData+=SAVE_SEPERATOR+pipesArray[i][j].isWaterHere();
                 }
+                fileWriter.write(saveData);
+                fileWriter.flush();
+                fileWriter.close();
             }
-            fileWriter.write(saveData);
-            fileWriter.flush();
-            fileWriter.close();
-        } catch(IOException e){
+        }catch(IOException e){
             System.out.println(e);
         }
     }
     //Loads a saved network
     public void load(){
-
+        String fileName=openDialog(LOAD_MESSAGE[0], LOAD_MESSAGE[1], "");
+        try{
+            File saveFile=new File(SAVE_DIRECTORY+fileName+SAVE_FILE_TYPE);
+            Scanner fileReader=new Scanner(saveFile);
+            String[] saveData=fileReader.nextLine().split(SAVE_SEPERATOR);
+            //System.out.println(fileReader.nextLine());
+            //Parses the string to an int, no need to check if it actually is an int as currently in try
+            //I am using 'magic numbers' here, however these do not ever need to be changed, as more of these
+            //vlaues can be added at the end, and I see no way to put the entirety of varibles into an array
+            
+            xSize=Integer.parseInt(saveData[0]);
+            ySize=Integer.parseInt(saveData[1]);
+            x=Integer.parseInt(saveData[2]);
+            y=Integer.parseInt(saveData[3]);
+            squareSize=Integer.parseInt(saveData[4]);
+            remakeNetwork();
+            //Pipe data
+            for(int i=METADATA_SIZE;i<((saveData.length))-1;i=i+PIPEDATA_SIZE){
+                pipeNode selectedNode=pipesArray[Integer.parseInt((saveData[i]))][Integer.parseInt(saveData[((i+1))])];
+                //I am using prime numbers to save the states of each node of the pipe
+                for(int k=0;k<SQUARE_SIDES;k++){
+                    if((Integer.parseInt(saveData[i+2]))%PRIME_NUMBERS[k]==0){
+                        //Here I am using force node so that it does have to process water as much
+                        selectedNode.forcePipe(k,true);
+                    }
+                    if(Integer.parseInt((saveData[i+3]))==YES_WATER_INT){
+                        selectedNode.flood(true);
+                    }
+                }
+            }
+        }catch(IOException e){
+            System.out.println(e);
+        }
     }
-
-    /*Each save needs-
-
-     * Meta data-
-     * x and y size
-     * x and y location
-     * pipe size 
-     * //Note, Im not storing flood mode
-     * //First flood mode has a very small impact on the user, and can be easily reactivated
-     * //And pipe size will no longer be saved in a seperate file, and as such will now also be a part of the meta data due to time I have left
-     * Pipenodes- //Will need location, because the user is likely to have majority of the file will be blank, thus this will compress the file more
-     * Each of the 4 sides - //I will be using primes to effeicently save this, which while will be slower, it will be more space effecient
-     * Whether it is flooded or not- //Will be a 1/0
-     * //Note, Im not storing adjacent node or their locations
-     * //I will be processing and assigning these on load
-     */
 }
+
+/*Each save needs-
+
+ * Meta data-
+ * x and y size
+ * x and y location
+ * pipe size 
+ * //Note, Im not storing flood mode
+ * //First flood mode has a very small impact on the user, and can be easily reactivated
+ * //And pipe size will no longer be saved in a seperate file, and as such will now also be a part of the meta data due to time I have left
+ * Pipenodes- //Will need location, because the user is likely to have majority of the file will be blank, thus this will compress the file more
+ * Each of the 4 sides - //I will be using primes to effeicently save this, which while will be slower, it will be more space effecient
+ * Whether it is flooded or not- //Will be a 1/0
+ * //Note, Im not storing adjacent node or their locations
+ * //I will be processing and assigning these on load
+ */
+
