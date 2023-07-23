@@ -2,11 +2,10 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v29 - 21/7
+ * @v30 - 24/7
  * 
  * Need to:
- * 2- CLEAN UP!
- * 1- Text box
+ * 1- CLEAN UP!
  */
 
 //Importing
@@ -58,20 +57,14 @@ public class main extends JFrame implements ActionListener, MouseListener
     int yClick;
     //The mode types. Currently just flood but should be able to easily add more
     boolean floodMode=false;
-    //Menu 1- Actions
-    final String ACTION_MENU_NAME="Actions";
-    final String[] ACTION_MENU_ITEMS={"Change water","Change Pipe Size"};
-    final char[] ACTION_MENU_SHORTCUT = {'f','p'};
-    //Menu 2- Movement
-    //I tried to use keyboard listener but I couldn't get them working so I decided to use hotkeys
-    final String MOVEMENT_MENU_NAME="Movement";
-    final String[] MOVEMENT_MENU_ITEMS={"Up","Left","Right","Down"};
-    final char[] MOVEMENT_MENU_SHORTCUT = {'w','a','d','s'};
-    //Menu 3- Saveing
-    //I am thinking about redoing this entire system as it is really bad, however until then it will be ugly
-    final String SAVE_MENU_NAME="Save/load";
-    final String[] SAVE_MENU_ITEMS={"Save","Load"};
-    final char[] SAVE_MENU_SHORTCUT = {'k','l'};
+    //Menus. This is in one big array because it is so much cleaner like this
+    final String[] MENU_NAMES={"Actions","Movement","Network"};
+    final String[][] MENU_ITEMS={{"Change water","Change Pipe Size"},{"Up","Left","Right","Down"},{"Save","Load","Create New"}};
+    final char[][] MENU_SHORTCUT = {{'f','p'},{'w','a','d','s'},{'k','l','c'}};
+    final int ACTION_CONSTANT=0;
+    final int MOVEMENT_CONSTANT=1;
+    final int SAVE_CONSTANT=2;
+    //I tried to use keyboard listener for movement but I couldn't get them working so I decided to use hotkeys
 
     //Save info
     final String SAVE_DIRECTORY=System.getProperty("user.dir")+"\\Saves\\";//This gets the location of the save file
@@ -96,72 +89,54 @@ public class main extends JFrame implements ActionListener, MouseListener
     //Dialog messages. I am defining them here so I can easily change them later. They are arrays based on
     //each dialog, order being title>message.
     final String[] PIPE_SIZE_CHANGE_MESSAGE={"Pipe Size","What do you wish to change the pipe size to?"};
+    //Making new network
+    final String[] NEW_NETWORK_X_MESSAGE={"New network","What do you wish the X size to be?"};
+    final String[] NEW_NETWORK_Y_MESSAGE={"New network","What do you wish the Y size to be?"};
     //These are for the save 
     final String[] SAVE_MESSAGE={"Saves","What would you like to call your save?"};
     final String[] LOAD_MESSAGE={"Loading","What would you like to load? The avalible files are: \n"};
     final String[] FILE_ALREADY_MESSAGE={"File already exists","There is already a save file with this name,\nwould you like to override?"};
+    //Genertic unsaved message
+    final String[] UNSAVED_MESSAGE={"Unsaved data","Are you sure you want to do this?\nAll unsaved data will be lost!"};
     //Genertic error for invaild input
     final String INVALID_INPUT_MESSAGE="Invaild input, please try again!";
+
+    //The main loop has the init for the UI, but pipe init is in another function
     public main()
     {
-        //Finish init
-        System.out.println(WINDOW_TITLE);
+        //Set the window size to the screen size. Slightly broken but it will take a while to get it to work perfectly
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         this.setPreferredSize(screenSize);
 
         //Menu
 
-        //NEEED TO CLEAN
-
         JMenuBar menuBar;
         JMenuItem menuItem;
-        JMenu actionMenu;
-        JMenu movementMenu;
-        JMenu saveMenu;
+        JMenu menu;
         menuBar=new JMenuBar();
         this.setJMenuBar(menuBar);
-        actionMenu=new JMenu(ACTION_MENU_NAME);
-        menuBar.add(actionMenu);
-        movementMenu=new JMenu(MOVEMENT_MENU_NAME);
-        menuBar.add(movementMenu);
-        saveMenu=new JMenu(SAVE_MENU_NAME);
-        menuBar.add(saveMenu);
-        //Actions
-        for(int i=0;i<ACTION_MENU_ITEMS.length;i++){
-            menuItem=new JMenuItem(ACTION_MENU_ITEMS[i]);
-            menuItem.addActionListener(this);
-            menuItem.setAccelerator(KeyStroke.getKeyStroke(ACTION_MENU_SHORTCUT[i]));
-            actionMenu.add(menuItem);
-        }
-        //Movements
-        for(int i=0;i<MOVEMENT_MENU_ITEMS.length;i++){
-            menuItem=new JMenuItem(MOVEMENT_MENU_ITEMS[i]);
-            menuItem.addActionListener(this);
-            menuItem.setAccelerator(KeyStroke.getKeyStroke(MOVEMENT_MENU_SHORTCUT[i]));
-            movementMenu.add(menuItem);
-        }
-        //Saaaaaaaaaaaaaaaaves
-        for(int i=0;i<SAVE_MENU_ITEMS.length;i++){
-            menuItem=new JMenuItem(SAVE_MENU_ITEMS[i]);
-            menuItem.addActionListener(this);
-            menuItem.setAccelerator(KeyStroke.getKeyStroke(SAVE_MENU_SHORTCUT[i]));
-            saveMenu.add(menuItem);
+
+        //Adds the menu items to the menus then ot the menu bars
+        for(int i=0;i<MENU_ITEMS.length;i++){
+            menu=new JMenu(MENU_NAMES[i]);
+            for(int j=0;j<MENU_ITEMS[i].length;j++){
+                menuItem=new JMenuItem(MENU_ITEMS[i][j]);
+                menuItem.addActionListener(this);
+                menuItem.setAccelerator(KeyStroke.getKeyStroke(MENU_SHORTCUT[i][j]));
+                menu.add(menuItem);
+            }
+            menuBar.add(menu);
         }
 
         //Canvas init
         Canvas myGraphic=new Canvas();
-
         addMouseListener(this);
         this.setSize(screenSize.width,screenSize.height);
         panel.add(myGraphic);
         this.pack();
         this.toFront(); 
         this.setVisible(true);
-        //this.add(panel);
         this.show();
-
-        //Makes the actual pipe network
-        remakeNetwork();
 
         //Gets the images of the pipes
         try{
@@ -174,6 +149,9 @@ public class main extends JFrame implements ActionListener, MouseListener
             ioe.printStackTrace();
             System.out.println("Error, file is missing");
         }
+
+        //Makes the actual pipe network
+        remakeNetwork();
     }
     //Sets up a new network. Ported from old main function
     public void remakeNetwork(){
@@ -281,38 +259,115 @@ public class main extends JFrame implements ActionListener, MouseListener
     //Finds what item is clicked in the menu
     public void actionPerformed(ActionEvent e){
         String itemClicked=e.getActionCommand();
-        //Added this so it doesnt have to loop more times if it has alrady found it
-        boolean actionFound=false;
-        boolean movementFound=false;
-        //Actions
-        for(int i=0;i<ACTION_MENU_ITEMS.length;i++){
-            if(ACTION_MENU_ITEMS[i]==itemClicked){
-                action(i);
-                actionFound=true;
-                i=ACTION_MENU_ITEMS.length;
-            }
-        }
-        //Movements
-        if(!actionFound){
-            for(int i=0;i<MOVEMENT_MENU_ITEMS.length;i++){
-                if(MOVEMENT_MENU_ITEMS[i]==itemClicked){
-                    movement(i);
-                    movementFound=true;
-                    i=MOVEMENT_MENU_ITEMS.length;
+
+        //Finds the name of the item
+        for(int i=0;i<MENU_ITEMS.length;i++){
+            for(int j=0;i<MENU_ITEMS[i].length;i++){
+                if(MENU_ITEMS[i][j]==itemClicked){
+                    //This finds the command based on the name because do not know how to save functions
+                    if(i==ACTION_CONSTANT){
+                        //I see no way other than a bunch of ifs or switchs
+                        switch(j){
+                                //I think I found an actual use for switchs
+                            case 0:
+                                floodMode=!floodMode;
+                                break;
+                            case 1:
+                                //For the changing pipe size, I decided to do it here because it would be messier doing it elsewhere. If there were more actions
+                                //being processed here, then I would likely. I might move this, if oyu are reading this then I did not 
+
+                                //Asking this here, so I can add an error message to the dialog box
+                                String dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1], squareSize+"");
+                                //Keeps looping to request the new pipe size if they input an invalid case 
+                                boolean keepLoop=true;
+                                while(keepLoop){
+                                    if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad.
+                                        squareSize=Integer.parseInt(dialogInput);
+                                        keepLoop=false;
+                                    }else{
+                                        dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1]+"\n"+INVALID_INPUT_MESSAGE, squareSize+"");
+                                    }
+                                }
+                                break;
+                            case 2:
+                                //This will be used soon
+                                break;
+                            default:
+                                //This is kept in the terminal because it should be impossible. I will likely remove it.
+                                System.out.println("Error");
+                        }                  
+                    }else if(i==MOVEMENT_CONSTANT){
+                        //This is for movement
+                        switch(j){
+                                //I think I found an actual use for switchs
+                            case 0:
+                                y-=1;
+                                break;
+                            case 1:
+                                x-=1;
+                                break;
+                            case 2:
+                                x+=1;
+                                break;
+                            case 3:
+                                y+=1;
+                                break;
+                            default:
+                                System.out.println("Error");
+                        }
+                    }else if(i==SAVE_CONSTANT){
+                        switch(j){
+                                //Unlike actions, I have these do to functions because it would be too messy otherwise.
+                            case 0:
+                                save();
+                                break;
+                            case 1:
+                                load();
+                                break;
+                            case 2:
+                                if(openBoolDialog(UNSAVED_MESSAGE[0], UNSAVED_MESSAGE[1])){
+                                    //Keeps looping to request the new pipe size if they input an invalid case 
+                                    String dialogInput=openDialog(NEW_NETWORK_X_MESSAGE[0], NEW_NETWORK_X_MESSAGE[1],xSize+"");
+                                    boolean keepLoop=true;
+                                    //Explanation of this loop in the pipe size changing area
+                                    while(keepLoop){
+                                        if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad.
+                                            xSize=Integer.parseInt(dialogInput);
+                                            keepLoop=false;
+                                        }else{
+                                            dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1]+"\n"+INVALID_INPUT_MESSAGE, xSize+"");
+                                        }
+                                    }
+                                    //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
+                                    dialogInput=openDialog(NEW_NETWORK_Y_MESSAGE[0], NEW_NETWORK_Y_MESSAGE[1],ySize+"");
+                                    while(keepLoop){
+                                        if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad.
+                                            ySize=Integer.parseInt(dialogInput);
+                                            keepLoop=false;
+                                        }else{
+                                            dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1]+"\n"+INVALID_INPUT_MESSAGE, ySize+"");
+                                        }
+                                    }
+                                    remakeNetwork();
+                                }
+                                break;
+                            default:
+                                System.out.println("Error");
+                        }
+                    }else{//I am adding an extra line for the error printing as a fail safe and I think it's cleaner
+                        System.out.println("Error");
+                    }
+                    //There is no else as a fail safe and cleaner code
+
+                    //This breaks the for loop without using the break command 
+                    i=MENU_ITEMS.length;
+                    j=MENU_ITEMS[i].length;
                 }
             }
-        }
-        //Saves. This is a really bad system I need to redo this once I have finished the project
-        if(!actionFound&&!movementFound){
-            for(int i=0;i<SAVE_MENU_ITEMS.length;i++){
-                if(SAVE_MENU_ITEMS[i]==itemClicked){
-                    saveMenuInputs(i);
-                    i=SAVE_MENU_ITEMS.length;
-                }
-            }
+            //Repaints it no matter what 
+            repaint();
         }
     }
-
     //These are required, dispite the fact that they are not used.
     public void mouseExited(MouseEvent e){}
 
@@ -362,7 +417,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         }
         //Right click
         else if (e.getButton() == MouseEvent.BUTTON3){
-
+            //This was unused, however it was originally going to be how to flood
         }
     }
 
@@ -469,6 +524,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         int startCoordenate;
         //This initalises all the varible that depend on whether the 'drag' is on the x direction or the y direction
         //There is a lot of stuff which is specific to each of the sides I might create more varibles to clean this
+        //While this looks like it can be murged into one, due to some complexities, it is impossible
         if(xDirection){
             //The directions of the x
             directions[0]=SQUARE_SIDES/2-1;
@@ -555,75 +611,6 @@ public class main extends JFrame implements ActionListener, MouseListener
             nodeToSwap.forcePipe(smallSize+(directionOfOtherSide),stateToConvertTo);
         }
     }
-    //Processes the action 
-    public void action(int actionInput){
-        switch(actionInput){
-                //I think I found an actual use for switchs
-            case 0:
-                floodMode=!floodMode;
-                break;
-            case 1:
-                //For the changing pipe size, I decided to do it here because it would be messier doing it elsewhere. If there were more actions
-                //being processed here, then I would likely. I might move this, if oyu are reading this then I did not 
-
-                //Asking this here, so I can add an error message to the dialog box
-                String dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1], squareSize+"");
-                //Keeps looping to request the new pipe size if they input an invalid case 
-                boolean keepLoop=true;
-                while(keepLoop){
-                    if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad.
-                        squareSize=Integer.parseInt(dialogInput);
-                        keepLoop=false;
-                    }else{
-                        dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1]+"\n"+INVALID_INPUT_MESSAGE, squareSize+"");
-                    }
-                }
-                repaint();
-                break;
-            case 2:
-                System.out.println("DEBUG");
-                break;
-            default:
-                //This is kept in the terminal because it should be impossible. I will likely remove it.
-                System.out.println("Error, not an action");
-        }
-    }
-    //Processes the movement
-    public void movement(int movementInput){
-        switch(movementInput){
-                //I think I found an actual use for switchs
-            case 0:
-                y-=1;
-                break;
-            case 1:
-                x-=1;
-                break;
-            case 2:
-                x+=1;
-                break;
-            case 3:
-                y+=1;
-                break;
-            default:
-                System.out.println("Error, not a movement");
-        }
-        repaint();
-    }
-    //Processes the save menu inputs
-    public void saveMenuInputs(int saveInput){
-        switch(saveInput){
-                //Unlike actions, I have these do to functions because it would be too messy otherwise.
-            case 0:
-                save();
-                break;
-            case 1:
-                load();
-                break;
-            default:
-                System.out.println("Error, not a save action");
-        }
-        repaint();
-    }
     //Opens a dialog box to get input. Returns a string rather than an int so I can use this to get text later
     public String openDialog(String windowTitle, String prompt, String defaultText){
         //I know this is 1 line, but it is signifcantly easier to use this function as it allows me to customise this box easily, 
@@ -634,10 +621,7 @@ public class main extends JFrame implements ActionListener, MouseListener
     public boolean openBoolDialog(String windowTitle, String prompt){
         //Very similar to above funciton, however they are different so its better to have two seperate functions. It returns an int but I need it boolean though
         int input=JOptionPane.showConfirmDialog(this,prompt,windowTitle,JOptionPane.YES_NO_OPTION);
-        if(input==1){
-            return true;
-        }
-        return false;//By default it will return false
+        return (input==1);//This means it returns falsue unless yes was clicked
     }
     //Saves a network
     public void save(){
@@ -695,52 +679,54 @@ public class main extends JFrame implements ActionListener, MouseListener
     }
     //Loads a saved network
     public void load(){
-        try{
-            //First it finds all the saves avalible to ask the user
-            File saveFilesFolder=new File(SAVE_DIRECTORY);
-            File[] avalibleSaves=saveFilesFolder.listFiles();
-            String avalibleSavesNames="";
-            for(int i=0;i<avalibleSaves.length;i++){//Adds the avalible save files to a string to give to the user
-                avalibleSavesNames+=(avalibleSaves[i].getName().replace(SAVE_FILE_TYPE,"")+"\n");//Also removes the .txt for cleanliness 
-            }
-            String fileName;
-            if(avalibleSavesNames==""){
-                //This runs if there is no files avalible
-                fileName=openDialog(LOAD_MESSAGE[0], "This here is temp, \nI will add a thing soon that stops the loading", "");
-            }else{
-                fileName=openDialog(LOAD_MESSAGE[0], LOAD_MESSAGE[1]+avalibleSavesNames, "");            
-            }
-            File saveFile=new File(SAVE_DIRECTORY+fileName+SAVE_FILE_TYPE);
-            Scanner fileReader=new Scanner(saveFile);
-            String[] saveData=fileReader.nextLine().split(SAVE_SEPERATOR);
-            
-            //System.out.println(fileReader.nextLine());
-            //Parses the string to an int, no need to check if it actually is an int as currently in try
-            //I am using 'magic numbers' here, however these do not ever need to be changed, as more of these
-            //vlaues can be added at the end, and I see no way to put the entirety of varibles into an array
-            
-            xSize=Integer.parseInt(saveData[0]);
-            ySize=Integer.parseInt(saveData[1]);
-            x=Integer.parseInt(saveData[2]);
-            y=Integer.parseInt(saveData[3]);
-            squareSize=Integer.parseInt(saveData[4]);
-            remakeNetwork();
-            //Pipe data
-            for(int i=METADATA_SIZE;i<((saveData.length))-1;i=i+PIPEDATA_SIZE){
-                pipeNode selectedNode=pipesArray[Integer.parseInt((saveData[i]))][Integer.parseInt(saveData[((i+1))])];
-                //I am using prime numbers to save the states of each node of the pipe
-                for(int k=0;k<SQUARE_SIDES;k++){
-                    if((Integer.parseInt(saveData[i+2]))%PRIME_NUMBERS[k]==0){
-                        //Here I am using force node so that it does have to process water as much
-                        selectedNode.forcePipe(k,true);
-                    }
-                    if(Integer.parseInt((saveData[i+3]))==YES_WATER_INT){
-                        selectedNode.flood(true);
+        if(openBoolDialog(UNSAVED_MESSAGE[0], UNSAVED_MESSAGE[1])){
+            try{
+                //First it finds all the saves avalible to ask the user
+                File saveFilesFolder=new File(SAVE_DIRECTORY);
+                File[] avalibleSaves=saveFilesFolder.listFiles();
+                String avalibleSavesNames="";
+                for(int i=0;i<avalibleSaves.length;i++){//Adds the avalible save files to a string to give to the user
+                    avalibleSavesNames+=(avalibleSaves[i].getName().replace(SAVE_FILE_TYPE,"")+"\n");//Also removes the .txt for cleanliness 
+                }
+                String fileName;
+                if(avalibleSavesNames==""){
+                    //This runs if there is no files avalible
+                    fileName=openDialog(LOAD_MESSAGE[0], "This here is temp, \nI will add a thing soon that stops the loading", "");
+                }else{
+                    fileName=openDialog(LOAD_MESSAGE[0], LOAD_MESSAGE[1]+avalibleSavesNames, "");            
+                }
+                File saveFile=new File(SAVE_DIRECTORY+fileName+SAVE_FILE_TYPE);
+                Scanner fileReader=new Scanner(saveFile);
+                String[] saveData=fileReader.nextLine().split(SAVE_SEPERATOR);
+
+                //System.out.println(fileReader.nextLine());
+                //Parses the string to an int, no need to check if it actually is an int as currently in try
+                //I am using 'magic numbers' here, however these do not ever need to be changed, as more of these
+                //vlaues can be added at the end, and I see no way to put the entirety of varibles into an array
+
+                xSize=Integer.parseInt(saveData[0]);
+                ySize=Integer.parseInt(saveData[1]);
+                x=Integer.parseInt(saveData[2]);
+                y=Integer.parseInt(saveData[3]);
+                squareSize=Integer.parseInt(saveData[4]);
+                remakeNetwork();
+                //Pipe data
+                for(int i=METADATA_SIZE;i<((saveData.length))-1;i=i+PIPEDATA_SIZE){
+                    pipeNode selectedNode=pipesArray[Integer.parseInt((saveData[i]))][Integer.parseInt(saveData[((i+1))])];
+                    //I am using prime numbers to save the states of each node of the pipe
+                    for(int k=0;k<SQUARE_SIDES;k++){
+                        if((Integer.parseInt(saveData[i+2]))%PRIME_NUMBERS[k]==0){
+                            //Here I am using force node so that it does have to process water as much
+                            selectedNode.forcePipe(k,true);
+                        }
+                        if(Integer.parseInt((saveData[i+3]))==YES_WATER_INT){
+                            selectedNode.flood(true);
+                        }
                     }
                 }
+            }catch(IOException e){
+                System.out.println(e);
             }
-        }catch(IOException e){
-            System.out.println(e);
         }
     }
 }
