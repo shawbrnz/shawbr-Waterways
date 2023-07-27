@@ -1,6 +1,6 @@
 #BlueJ class context
 comment0.target=pipeNode
-comment0.text=\r\n\ Pipe\ node.\r\n\r\n\ @Brendan\ Shaw\r\n\ @v21\ -\ 19/6\r\n
+comment0.text=\r\n\ Pipe\ node.\r\n\r\n\ @Brendan\ Shaw\r\n\ @v31\ -\ 27/7\r\n\ \r\n\ \ This\ is\ the\ node\ for\ each\ pipe\r\n\ \r\n
 comment1.params=adjaceneNodes
 comment1.target=void\ setAdjacentPipeNode(pipeNode[])
 comment10.params=

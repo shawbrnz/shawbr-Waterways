@@ -2,15 +2,12 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v30 - 24/7
+ * @v31 - 27/7
  * 
- * Need to:
- * 1- CLEAN UP!
+ * This is the main function, where the frame is 
  */
 
 //Importing
-
-//NEED TO CHECK TO ENSURE ALL OF THESE ARE USED
 
 import java.util.Scanner;
 
@@ -34,14 +31,12 @@ public class main extends JFrame implements ActionListener, MouseListener
     final int Y_OFFSET=60;
     //Number of sides on a square (No 'magic' numbers)
     final int SQUARE_SIDES=4;
-    //Name of the window (Likely not used)
-    final String WINDOW_TITLE="Brendan Shaw's Waterways Project";
 
     //Initalising varibles. Note these are not finals as I plan for the user to be able to modify these
 
     //Size of squares
     int squareSize=100;
-    //Number of squares. 
+    //Defult number of squares. 
     int xSize=100;
     int ySize=100;
     int x=xSize/2;
@@ -65,6 +60,7 @@ public class main extends JFrame implements ActionListener, MouseListener
     final int MOVEMENT_CONSTANT=1;
     final int SAVE_CONSTANT=2;
     //I tried to use keyboard listener for movement but I couldn't get them working so I decided to use hotkeys
+    final int MOVEMENT_AMOUNT=1;
 
     //Save info
     final String SAVE_DIRECTORY=System.getProperty("user.dir")+"\\Saves\\";//This gets the location of the save file
@@ -101,7 +97,7 @@ public class main extends JFrame implements ActionListener, MouseListener
     //Genertic error for invaild input
     final String INVALID_INPUT_MESSAGE="Invaild input, please try again!";
 
-    //The main loop has the init for the UI, but pipe init is in another function
+    //The main loop has the init for the UI, but pipe init is in another function. Everything in here I would put above, but am unable to
     public main()
     {
         //Set the window size to the screen size. Slightly broken but it will take a while to get it to work perfectly
@@ -138,7 +134,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         this.setVisible(true);
         this.show();
 
-        //Gets the images of the pipes
+        //Gets the images of the pipes. Requires a try becuse its opening files
         try{
             for(int i=0; i<NUMBER_OF_PIPE_TYPES; i++){
                 for(int j=0; j<imageOfPipe[i].length; j++){
@@ -172,7 +168,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                 //Edges loop around because it is much easier to code, and is a simple
                 //way to resolve the edge issue. The user would probably not experience
                 //it anyway, unless they are you. This is a bad way of doing this however
-                //it is more time effecient for me
+                //it is more time effecient for me, and I dont see a better way of doing this
                 if(i==0){
                     adjacentLocations[1]=xSize-1;
                     adjacentLocations[0]=i+1;
@@ -200,11 +196,11 @@ public class main extends JFrame implements ActionListener, MouseListener
                 pipesArray[i][j].setAdjacentPipeNode(adjacentPipes);
             }
         }
-
-        repaint();
+        repaint();//This ensures that it is up to date
     }
     //Renders everything
     public void paint (Graphics g){
+        //This is a bit large but it has to due to the nature of rendering everything
         super.paint(g);
         Graphics2D g2=(Graphics2D)g;
         int width = getWidth();
@@ -228,12 +224,11 @@ public class main extends JFrame implements ActionListener, MouseListener
         //This renders the pipes. It is a bit laggy, I will define it in main
         for(int i=0;i<width/squareSize;i++){
             for(int j=0;j<height/squareSize;j++){
-                boolean squareHere=false;
-                for(int k=0;k<SQUARE_SIDES;k++){
-                    if(squareHere){
+                if (pipesArray[i+x][j+y].pipeThere()){
+                    //This is used so it prints the blank parts of the nodes. This is much clleaner and faster than my last solution because it uses funcitons that did not exist then.
+                    for(int k=0;k<SQUARE_SIDES;k++){
                         //Requires try catch due to file selection of the draw image
-                        //I cannot use icons as you cannot change their size, dispite the fact that it is laggier
-
+                        //I cannot use icons as you cannot change their size, dispite the fact that it is laggier and causes pixels to be deleted and added when they are of different size
                         if(pipesArray[i+x][j+y].pipeThere(k)){
                             Image pipeImage;
                             if(pipesArray[i+x][j+y].isWaterHere()){
@@ -243,15 +238,10 @@ public class main extends JFrame implements ActionListener, MouseListener
                             }
                             g2.drawImage(pipeImage,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET,squareSize,squareSize,this);
                         }else{
-
                             Image pipeImage=imageOfPipe[1][k];
                             g2.drawImage(pipeImage,(i*squareSize)+X_OFFSET,(j*squareSize)+Y_OFFSET,squareSize,squareSize,this);
                         }
-                    }else if (pipesArray[i+x][j+y].pipeThere(k)){
-                        squareHere=true;
-                        k=-1;
                     }
-
                 }
             }
         }
@@ -262,110 +252,125 @@ public class main extends JFrame implements ActionListener, MouseListener
 
         //Finds the name of the item
         for(int i=0;i<MENU_ITEMS.length;i++){
-            for(int j=0;i<MENU_ITEMS[i].length;i++){
+            for(int j=0;j<MENU_ITEMS[i].length;j++){
                 if(MENU_ITEMS[i][j]==itemClicked){
                     //This finds the command based on the name because do not know how to save functions
+                    //I see no way other than a bunch of ifs or switchs
                     if(i==ACTION_CONSTANT){
-                        //I see no way other than a bunch of ifs or switchs
-                        switch(j){
-                                //I think I found an actual use for switchs
-                            case 0:
-                                floodMode=!floodMode;
-                                break;
-                            case 1:
-                                //For the changing pipe size, I decided to do it here because it would be messier doing it elsewhere. If there were more actions
-                                //being processed here, then I would likely. I might move this, if oyu are reading this then I did not 
-
-                                //Asking this here, so I can add an error message to the dialog box
-                                String dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1], squareSize+"");
-                                //Keeps looping to request the new pipe size if they input an invalid case 
-                                boolean keepLoop=true;
-                                while(keepLoop){
-                                    if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad.
-                                        squareSize=Integer.parseInt(dialogInput);
-                                        keepLoop=false;
-                                    }else{
-                                        dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1]+"\n"+INVALID_INPUT_MESSAGE, squareSize+"");
-                                    }
-                                }
-                                break;
-                            case 2:
-                                //This will be used soon
-                                break;
-                            default:
-                                //This is kept in the terminal because it should be impossible. I will likely remove it.
-                                System.out.println("Error");
-                        }                  
+                        actions(j);
                     }else if(i==MOVEMENT_CONSTANT){
-                        //This is for movement
-                        switch(j){
-                                //I think I found an actual use for switchs
-                            case 0:
-                                y-=1;
-                                break;
-                            case 1:
-                                x-=1;
-                                break;
-                            case 2:
-                                x+=1;
-                                break;
-                            case 3:
-                                y+=1;
-                                break;
-                            default:
-                                System.out.println("Error");
-                        }
+                        movement(j);
                     }else if(i==SAVE_CONSTANT){
-                        switch(j){
-                                //Unlike actions, I have these do to functions because it would be too messy otherwise.
-                            case 0:
-                                save();
-                                break;
-                            case 1:
-                                load();
-                                break;
-                            case 2:
-                                if(openBoolDialog(UNSAVED_MESSAGE[0], UNSAVED_MESSAGE[1])){
-                                    //Keeps looping to request the new pipe size if they input an invalid case 
-                                    String dialogInput=openDialog(NEW_NETWORK_X_MESSAGE[0], NEW_NETWORK_X_MESSAGE[1],xSize+"");
-                                    boolean keepLoop=true;
-                                    //Explanation of this loop in the pipe size changing area
-                                    while(keepLoop){
-                                        if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad.
-                                            xSize=Integer.parseInt(dialogInput);
-                                            keepLoop=false;
-                                        }else{
-                                            dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1]+"\n"+INVALID_INPUT_MESSAGE, xSize+"");
-                                        }
-                                    }
-                                    //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
-                                    dialogInput=openDialog(NEW_NETWORK_Y_MESSAGE[0], NEW_NETWORK_Y_MESSAGE[1],ySize+"");
-                                    while(keepLoop){
-                                        if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad.
-                                            ySize=Integer.parseInt(dialogInput);
-                                            keepLoop=false;
-                                        }else{
-                                            dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1]+"\n"+INVALID_INPUT_MESSAGE, ySize+"");
-                                        }
-                                    }
-                                    remakeNetwork();
-                                }
-                                break;
-                            default:
-                                System.out.println("Error");
-                        }
+                        network(j);
                     }else{//I am adding an extra line for the error printing as a fail safe and I think it's cleaner
                         System.out.println("Error");
                     }
                     //There is no else as a fail safe and cleaner code
 
                     //This breaks the for loop without using the break command 
-                    i=MENU_ITEMS.length;
-                    j=MENU_ITEMS[i].length;
+                    i=MENU_ITEMS.length-1;
+                    j=MENU_ITEMS[i].length-1;
                 }
             }
             //Repaints it no matter what 
             repaint();
+        }
+    }
+    //Deals with movement. Not required and less effeicent but significantly more readable
+    public void movement(int keyPressed){
+        switch(keyPressed){
+                //Here I am using these values that are hard coded, but there isn't a better way, as they are ordered increasing by one, so adding an array would just move the issue onto an array.
+            case 0:
+                y-=MOVEMENT_AMOUNT;
+                break;
+            case 1:
+                x-=MOVEMENT_AMOUNT;
+                break;
+            case 2:
+                x+=MOVEMENT_AMOUNT;
+                break;
+            case 3:
+                y+=MOVEMENT_AMOUNT;
+                break;
+            default:
+                System.out.println("Error");
+        }
+    }
+    //Does the 'actions'
+    public void actions(int keyPressed){
+        switch(keyPressed){
+                //I think I found an actual use for switchs
+            case 0:
+                //I 
+                floodMode=!floodMode;
+                break;
+            case 1:
+                //For the changing pipe size, I decided to do it here because it would be messier doing it elsewhere. If there were more actions
+                //being processed here, then I would likely. I might move this, if oyu are reading this then I did not 
+
+                //Asking this here, so I can add an error message to the dialog box
+                String dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1], squareSize+"");
+                //Keeps looping to request the new pipe size if they input an invalid case 
+                boolean keepLoop=true;
+                while(keepLoop){
+                    //Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad. I use this elsewhere as well now, I have decided against making 
+                    //this into a funciton because it would just be longer for a very short piece of code
+                    if(dialogInput.matches("\\d+")){
+                        squareSize=Integer.parseInt(dialogInput);
+                        keepLoop=false;
+                    }else{
+                        dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1]+"\n"+INVALID_INPUT_MESSAGE, squareSize+"");
+                    }
+                }
+                break;
+            default:
+                //This is kept in the terminal because it should be impossible. I will likely remove it.
+                System.out.println("Error");
+        }    
+    }
+    //Deals with 'network stuff'. I referred to this menu as 'save' however I have tried to change it to network to avoid confusion.
+    public void network(int keyPressed){
+        switch(keyPressed){
+                //Unlike actions, I have these do to functions because it would be too messy otherwise.
+            case 0:
+                save();
+                break;
+            case 1:
+                load();
+                break;
+            case 2:
+                changeNetworkSize();
+                break;
+            default:
+                System.out.println("Error");
+        }
+    }
+    //Remake the netowrk of a different size. Requires to be remade due to hte nature of java arrays
+    public void changeNetworkSize(){
+        if(openBoolDialog(UNSAVED_MESSAGE[0], UNSAVED_MESSAGE[1])){
+            //Keeps looping to request the new pipe size if they input an invalid case 
+            String dialogInput=openDialog(NEW_NETWORK_X_MESSAGE[0], NEW_NETWORK_X_MESSAGE[1],xSize+"");
+            boolean keepLoop=true;
+            //Explanation of this loop in the pipe size changing area
+            while(keepLoop){
+                if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad.
+                    xSize=Integer.parseInt(dialogInput);
+                    keepLoop=false;
+                }else{
+                    dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1]+"\n"+INVALID_INPUT_MESSAGE, xSize+"");
+                }
+            }
+            //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
+            dialogInput=openDialog(NEW_NETWORK_Y_MESSAGE[0], NEW_NETWORK_Y_MESSAGE[1],ySize+"");
+            while(keepLoop){
+                if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad.
+                    ySize=Integer.parseInt(dialogInput);
+                    keepLoop=false;
+                }else{
+                    dialogInput=openDialog(PIPE_SIZE_CHANGE_MESSAGE[0], PIPE_SIZE_CHANGE_MESSAGE[1]+"\n"+INVALID_INPUT_MESSAGE, ySize+"");
+                }
+            }
+            remakeNetwork();
         }
     }
     //These are required, dispite the fact that they are not used.
@@ -384,7 +389,6 @@ public class main extends JFrame implements ActionListener, MouseListener
                 }
             }
         }
-        else if(e.getButton() == MouseEvent.BUTTON3){currentRightClick=false;}
         repaint();
     }
     //Processes the stuff for when there is a click
@@ -406,18 +410,12 @@ public class main extends JFrame implements ActionListener, MouseListener
                         //No longer deactivation floodmode, as per review 
                     }else{
                         //This section is outdated
-                        //selectedNode.swapPipe(side);
-                        //selectedNode.floodNodeIfShouldBe(side);
-                        yClick=yMouse;
+                        yClick=yMouse;//This is used for pipe dragging
                         xClick=xMouse;
                     }
                 }
-                currentLeftClick=true;
+                currentLeftClick=true;//This stops this line from running again until the mouse button is removed
             }
-        }
-        //Right click
-        else if (e.getButton() == MouseEvent.BUTTON3){
-            //This was unused, however it was originally going to be how to flood
         }
     }
 
@@ -433,9 +431,8 @@ public class main extends JFrame implements ActionListener, MouseListener
     //Returns the side of the square that is clicked, 0 being top, going clockwise, left being 3
     int subSquares(int yClicked, int xClicked, int squareSize){
         //It is possible to make this slightly faster by splitting the left
-        //and right up and only checking 1 and 3 once
-
-        //TODO- Clean this
+        //and right up and only checking 1 and 3 once, however this hardly gets run except in one case
+        //so I decided to leave it like this. Not using else ifs because returns
 
         //Top left
         if(squareSize/2>=xClicked&&squareSize/2>=yClicked){
@@ -469,7 +466,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                 return 2;
             }
         }
-        //Should not run, but is required for java. Will be removed after cleaning
+        //Should not run, but is required for java. I thought about putting the return 2 above here but it looked uglier
         return -1;
     }
     //Swaps the pipes if they are dragged over
@@ -477,10 +474,10 @@ public class main extends JFrame implements ActionListener, MouseListener
         //Gets the x and y of the location. I have to do this as I need to see if it is dragged across tiles, this is relitiv
         int xNode1Location=xNode1/squareSize;
         int xNode2Location=xNode2/squareSize;
-        int yNode1Location=yNode1/squareSize;
+        int yNode1Location=yNode1/squareSize;//I am using the fact that java rounds a lot here
         int yNode2Location=yNode2/squareSize;
 
-        int numberOfTilesOnX=Math.abs(xNode1Location-xNode2Location);
+        int numberOfTilesOnX=Math.abs(xNode1Location-xNode2Location);//While I could have put this straight into the funciton it would require repeating these
         int numberOfTilesOnY=Math.abs(yNode1Location-yNode2Location);
 
         if(numberOfTilesOnX>numberOfTilesOnY){
@@ -494,7 +491,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         }else if(numberOfTilesOnX==numberOfTilesOnY){
             //If there is only 1 tile
             pipeNode selectedNode=pipesArray[xNode1Location+x][yNode1Location+y];
-            selectedNode.swapPipe(subSquares(yNode1%squareSize,xNode1%squareSize,squareSize));
+            selectedNode.swapPipe(subSquares(yNode1%squareSize,xNode1%squareSize,squareSize));//This is the one use case for subSquares I meantioned eariler. It was used a lot more but I added the dragging
         }else{
             //'Drags' the y
             if(yNode1Location<yNode2Location){
@@ -506,7 +503,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         }
 
     }
-    //Puts a line of pipes down. Very ugly, need to clean.
+    //Puts a line of pipes down.
     public void pipeLine(int x1,int x2,int y1,int y2, boolean xDirection){
         //Finds the first node
         pipeNode firstNode=pipesArray[x1/squareSize+x][y1/squareSize+y];
@@ -517,76 +514,64 @@ public class main extends JFrame implements ActionListener, MouseListener
         int pipeSideDefultState;
 
         //Initialises the directions
-        int [] directions=new int[2];
+        int [] directions={0,SQUARE_SIDES/2};
 
         boolean stateToConvertTo; 
         int endCoordenate;
         int startCoordenate;
+
+        //These are needed to ensure the code can be compressed so much
+        int firstLocation;
+        int secondLocation;
+        
+        int endNodeFlip=1;
+        
         //This initalises all the varible that depend on whether the 'drag' is on the x direction or the y direction
         //There is a lot of stuff which is specific to each of the sides I might create more varibles to clean this
-        //While this looks like it can be murged into one, due to some complexities, it is impossible
-        if(xDirection){
-            //The directions of the x
-            directions[0]=SQUARE_SIDES/2-1;
-            directions[1]=SQUARE_SIDES/2+1;
-
+        //While this looks like it can be murged into one, due to some complexities, it is impossible at this level of com sci, although I did quite a bit, the rest would just be longer
+        if(xDirection){//Everything that is still here I cannot think of a way to remove them from this if statement without creataing an entire other one
             //y is the same as the first node to 'lock' in a line
             secondNode=pipesArray[x2/squareSize+x][y1/squareSize+y];
 
-            if(x1%squareSize>squareSize/2){
-                pipeSideDefultState=directions[0];
-                //This needs to be done here, because this is after the defult state is found and before the first pipe is changed
-                stateToConvertTo=!firstNode.pipeThere(pipeSideDefultState); 
-                //Processes end node
-                processEndNodes(false,directions[0],firstNode,(SQUARE_SIDES/2),stateToConvertTo);
-            }else{
-                pipeSideDefultState=directions[1];
-                //This needs to be done here, because this is after the defult state is found and before the first pipe is changed
-                stateToConvertTo=!firstNode.pipeThere(pipeSideDefultState); 
-                //Processes end node
-                processEndNodes(true,directions[0],firstNode,(SQUARE_SIDES/2),stateToConvertTo);
-            }
-
-            //Processes the far end node
-            if(x2%squareSize>squareSize/2){
-                processEndNodes(true,directions[1],secondNode,-(SQUARE_SIDES/2),stateToConvertTo);
-            }else{
-                processEndNodes(false,directions[1],secondNode,-(SQUARE_SIDES/2),stateToConvertTo);
-            }
-
-            endCoordenate=secondNode.xLocation();
+            endCoordenate=(x2/squareSize)+x;
             startCoordenate=xFirst+1;
-        }else{
-            //The directions of the y
-            directions[0]=SQUARE_SIDES/2-2;
-            directions[1]=SQUARE_SIDES/2;
 
+            firstLocation=x1;
+            secondLocation=x2;
+            
+            for(int j=0;j<SQUARE_SIDES/2;j++){
+                directions[j]++;
+            }
+        }else{
             //x is the same as the first node to 'lock' in a line
             secondNode=pipesArray[x1/squareSize+x][y2/squareSize+y];
 
-            //Processes the close node
-            if(y1%squareSize>squareSize/2){
-                pipeSideDefultState=directions[0];
-                //This needs to be done here, because this is after the defult state is found and before the first pipe is changed
-                stateToConvertTo=!firstNode.pipeThere(pipeSideDefultState); 
-                //Processes end node
-                processEndNodes(false,directions[1],firstNode,-(SQUARE_SIDES/2),stateToConvertTo);
-            }else{
-                pipeSideDefultState=directions[1];
-                //This needs to be done here, because this is after the defult state is found and before the first pipe is changed
-                stateToConvertTo=!firstNode.pipeThere(pipeSideDefultState); 
-                //Processes end node
-                processEndNodes(true,directions[1],firstNode,-(SQUARE_SIDES/2),stateToConvertTo);
-            }
-            //Processes the far end node
-            if(y2%squareSize>squareSize/2){
-                processEndNodes(true,directions[0],secondNode,(SQUARE_SIDES/2),stateToConvertTo);
-            }else{
-                processEndNodes(false,directions[0],secondNode,(SQUARE_SIDES/2),stateToConvertTo);
-            }
-            endCoordenate=secondNode.yLocation();
+            endCoordenate=(y2/squareSize)+y;
             startCoordenate=yFirst+1;
+
+            firstLocation=y1;
+            secondLocation=y2;
+            
+            endNodeFlip=-1;//Required so the end nodes behave
         }
+        //Processes the close node
+        if(firstLocation%squareSize>squareSize/2){
+            pipeSideDefultState=directions[0];
+        }else{
+            pipeSideDefultState=directions[1];
+        }
+        //This needs to be done here, because this is after the defult state is found and before the first pipe is changed
+        stateToConvertTo=!firstNode.pipeThere(pipeSideDefultState); 
+        //I have ensured they are the same for both x and y
+        //Processes end node
+        if(!xDirection){
+            int tempDirection=directions[0];
+            directions[0]=directions[1];
+            directions[1]=tempDirection;
+        }
+        processEndNodes(!(firstLocation%squareSize>squareSize/2),directions[0],firstNode,(SQUARE_SIDES/2)*endNodeFlip,stateToConvertTo);
+        //Processes the far end node. 
+        processEndNodes(secondLocation%squareSize>squareSize/2,directions[1],secondNode,-(SQUARE_SIDES/2)*endNodeFlip,stateToConvertTo);//Math.abs(0+endNodeFlip) only works for left ot right
         //I am going to handle the end pipes seperately, to ensure only particular sides get swapped
         for(int i=startCoordenate;i<endCoordenate;i++){
             //I dont see a better way of doing this currently, as there is no way to my knowledge to
@@ -600,7 +585,6 @@ public class main extends JFrame implements ActionListener, MouseListener
             //Dispite this only being 2 long, I decided to use a for loop because its 'cleaner'
             for(int j=0;j<SQUARE_SIDES/2;j++){
                 selectedNode.forcePipe(directions[j],stateToConvertTo);
-                //selectedNode.floodNodeIfShouldBe(directions[j]);
             }
         }
     }
@@ -608,7 +592,7 @@ public class main extends JFrame implements ActionListener, MouseListener
     public void processEndNodes(boolean twoPipes, int smallSize, pipeNode nodeToSwap, int directionOfOtherSide, boolean stateToConvertTo){
         nodeToSwap.forcePipe(smallSize,stateToConvertTo);
         if(twoPipes){
-            nodeToSwap.forcePipe(smallSize+(directionOfOtherSide),stateToConvertTo);
+            nodeToSwap.forcePipe(((smallSize+(directionOfOtherSide))),stateToConvertTo);
         }
     }
     //Opens a dialog box to get input. Returns a string rather than an int so I can use this to get text later
@@ -621,7 +605,7 @@ public class main extends JFrame implements ActionListener, MouseListener
     public boolean openBoolDialog(String windowTitle, String prompt){
         //Very similar to above funciton, however they are different so its better to have two seperate functions. It returns an int but I need it boolean though
         int input=JOptionPane.showConfirmDialog(this,prompt,windowTitle,JOptionPane.YES_NO_OPTION);
-        return (input==1);//This means it returns falsue unless yes was clicked
+        return (input==0);//This means it returns falsue unless yes was clicked
     }
     //Saves a network
     public void save(){
@@ -658,8 +642,8 @@ public class main extends JFrame implements ActionListener, MouseListener
                                     primePipeState*=PRIME_NUMBERS[k];
                                 }
                             }
-                            saveData+=SAVE_SEPERATOR+primePipeState;//If my code is bad, this should be a 1, however that should not happen
-                            //I save whether there is water or not using 1 and 0, as booleans are annoying
+                            saveData+=SAVE_SEPERATOR+primePipeState;//If my code is bad, this should be a 1, however that should not happen. Funny enough, this did happen but its fixed now
+                            //I save whether there is water or not using 1 and 0, as booleans are annoying as I am using strings to pass the data
                             int isWaterHereInt=NO_WATER_INT;
                             if(pipesArray[i][j].isWaterHere()){
                                 isWaterHereInt=YES_WATER_INT;
@@ -674,7 +658,6 @@ public class main extends JFrame implements ActionListener, MouseListener
             }
         }catch(IOException e){
             System.out.println(e);
-            System.out.println(SAVE_DIRECTORY+fileName+SAVE_FILE_TYPE);
         }
     }
     //Loads a saved network
@@ -689,43 +672,43 @@ public class main extends JFrame implements ActionListener, MouseListener
                     avalibleSavesNames+=(avalibleSaves[i].getName().replace(SAVE_FILE_TYPE,"")+"\n");//Also removes the .txt for cleanliness 
                 }
                 String fileName;
-                if(avalibleSavesNames==""){
-                    //This runs if there is no files avalible
-                    fileName=openDialog(LOAD_MESSAGE[0], "This here is temp, \nI will add a thing soon that stops the loading", "");
-                }else{
+                if(!(avalibleSavesNames=="")){
+                    //Only runs if there are save files avilible
                     fileName=openDialog(LOAD_MESSAGE[0], LOAD_MESSAGE[1]+avalibleSavesNames, "");            
-                }
-                File saveFile=new File(SAVE_DIRECTORY+fileName+SAVE_FILE_TYPE);
-                Scanner fileReader=new Scanner(saveFile);
-                String[] saveData=fileReader.nextLine().split(SAVE_SEPERATOR);
+                    File saveFile=new File(SAVE_DIRECTORY+fileName+SAVE_FILE_TYPE);
+                    Scanner fileReader=new Scanner(saveFile);
+                    String[] saveData=fileReader.nextLine().split(SAVE_SEPERATOR);
 
-                //System.out.println(fileReader.nextLine());
-                //Parses the string to an int, no need to check if it actually is an int as currently in try
-                //I am using 'magic numbers' here, however these do not ever need to be changed, as more of these
-                //vlaues can be added at the end, and I see no way to put the entirety of varibles into an array
+                    //System.out.println(fileReader.nextLine());
+                    //Parses the string to an int, no need to check if it actually is an int as currently in try
+                    //I am using 'magic numbers' here, however these do not ever need to be changed, as more of these
+                    //vlaues can be added at the end, and I see no way to put the entirety of varibles into an array
 
-                xSize=Integer.parseInt(saveData[0]);
-                ySize=Integer.parseInt(saveData[1]);
-                x=Integer.parseInt(saveData[2]);
-                y=Integer.parseInt(saveData[3]);
-                squareSize=Integer.parseInt(saveData[4]);
-                remakeNetwork();
-                //Pipe data
-                for(int i=METADATA_SIZE;i<((saveData.length))-1;i=i+PIPEDATA_SIZE){
-                    pipeNode selectedNode=pipesArray[Integer.parseInt((saveData[i]))][Integer.parseInt(saveData[((i+1))])];
-                    //I am using prime numbers to save the states of each node of the pipe
-                    for(int k=0;k<SQUARE_SIDES;k++){
-                        if((Integer.parseInt(saveData[i+2]))%PRIME_NUMBERS[k]==0){
-                            //Here I am using force node so that it does have to process water as much
-                            selectedNode.forcePipe(k,true);
-                        }
-                        if(Integer.parseInt((saveData[i+3]))==YES_WATER_INT){
-                            selectedNode.flood(true);
+                    xSize=Integer.parseInt(saveData[0]);
+                    ySize=Integer.parseInt(saveData[1]);
+                    x=Integer.parseInt(saveData[2]);
+                    y=Integer.parseInt(saveData[3]);
+                    squareSize=Integer.parseInt(saveData[4]);
+                    remakeNetwork();
+                    //Pipe data
+                    for(int i=METADATA_SIZE;i<((saveData.length))-1;i=i+PIPEDATA_SIZE){
+                        pipeNode selectedNode=pipesArray[Integer.parseInt((saveData[i]))][Integer.parseInt(saveData[((i+1))])];
+                        //I am using prime numbers to save the states of each node of the pipe
+                        for(int k=0;k<SQUARE_SIDES;k++){
+                            if((Integer.parseInt(saveData[i+2]))%PRIME_NUMBERS[k]==0){
+                                //Here I am using force node so that it does have to process water as much
+                                selectedNode.forcePipe(k,true);
+                            }
+                            if(Integer.parseInt((saveData[i+3]))==YES_WATER_INT){
+                                selectedNode.flood(true);
+                            }
                         }
                     }
+                    //I have decided to include some examples which will mean this should never run. I have added a failsafe just in case though, which I removed and instead do what is happening now
+                    //There use to be an extra ifelse and then an else which was here, which is why this comment is here
                 }
             }catch(IOException e){
-                System.out.println(e);
+                System.out.println(e);//This occurs throughout the code, but I decided to talk about it here, but this is here because I need to inform if there is an error with file stuff, but I removed all other System.out.prinlns
             }
         }
     }
@@ -733,6 +716,8 @@ public class main extends JFrame implements ActionListener, MouseListener
 
 /*Each save needs-
 
+ *    //This was just me planning what the save would be, however I kept it here for reference
+ *  
  * Meta data-
  * x and y size
  * x and y location

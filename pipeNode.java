@@ -3,10 +3,14 @@
  * Pipe node.
  *
  * @Brendan Shaw
- * @v21 - 19/6
+ * @v31 - 27/7
+ * 
+ *  This is the node for each pipe
+ * 
  */
 public class pipeNode
 {
+    //I made these private because it means I dont accidently change these, and I've written the main function now and do not have enough time to make the ones that should be public public
     //Number of sides on a square (No magic numbers)
     final int SQUARE_SIDES=4;
     private boolean[] pipes=new boolean[SQUARE_SIDES];
@@ -14,26 +18,26 @@ public class pipeNode
     private int xLoc;
     private int yLoc;
     private pipeNode[] adjacentPipes=new pipeNode[SQUARE_SIDES];
+    //Sets the adjacent nodes of this node so flooding can be fast
     public void setAdjacentPipeNode(pipeNode[] adjaceneNodes){
         for(int i=0; i<SQUARE_SIDES; i++){
             adjacentPipes[i]=adjaceneNodes[i];
         }
     }
-
+    //This sets the location id of this pipe
     public void giveLocation(int x,int y){
         xLoc=x;
         yLoc=y;
     }
-
+    //Returns x location
     public int xLocation(){
         return(xLoc);
     }
-    
+    //Returns y location
     public int yLocation(){
         return(yLoc);
     }
-
-
+    //Tests to see if there is a pipe there
     public boolean pipeThere(){
         for(int i=0; i<SQUARE_SIDES; i++){
             if(pipes[i]){
@@ -42,7 +46,7 @@ public class pipeNode
         }
         return false;
     }
-
+    //Tests to see if there is a pipe in this specific node.
     public boolean pipeThere(int pipe){
         return pipes[pipe];
     }
@@ -50,24 +54,28 @@ public class pipeNode
     public void swapPipe(int pipe){
         pipes[pipe]=!pipes[pipe];
         if(!pipeThere()){
+            //Removes the water if there is no pipes
             waterHere=false;
         }else{
+            //I will explain why this is required later
             floodNodeIfShouldBe(pipe);
         }
     }
     //Forces a pipe into a state
     public void forcePipe(int pipe, boolean pipeState){
         pipes[pipe]=pipeState;
-        if(pipes[pipe]){
-            for(int i=0; i<SQUARE_SIDES; i++){
-                floodNodeIfShouldBe(i);
-            }
+        //This part is explained above. I thought about moving these into a function but I didn't think it was nessisary, as it is just an if statement
+        if(!pipeThere()){
+            waterHere=false;
+        }else{
+            floodNodeIfShouldBe(pipe);
         }
     }
-    //Floods/unfloods this node and then the adjacent nodes
+    //Floods/unfloods this node and then the adjacent nodes. True input means it will flood, false will dry.
     public void flood(boolean isWater){
         if(pipeThere()){
             boolean sendWaterChange=false;
+            //I thought about shortening this, however I think this is the best way of doing it to allow for the next comment
             if(!waterHere&&isWater){
                 sendWaterChange=true;
                 waterHere=true;
@@ -75,10 +83,12 @@ public class pipeNode
                 sendWaterChange=true;
                 waterHere=false;
             }
+            //This ensures it does not send out a requiest to flood if it is currently flooded, or visa versa so it wont just get stuck in a loop
             if(sendWaterChange){
                 for(int i=0; i<SQUARE_SIDES; i++){
+                    //It actually has to have a pipe facing that direction and the adjacent node facing towards this node.
                     if(pipes[i]){
-                        if (adjacentNodeHasPipe(i)){
+                        if(adjacentNodeHasPipe(i)){
                             adjacentPipes[i].flood(isWater);
                         }
                     }
@@ -92,14 +102,14 @@ public class pipeNode
     }
     //Tests to see if the adjacent node has the pipe facing this node
     public boolean adjacentNodeHasPipe(int side){
-        //There is no way to make this smaller without added extra ifs
+        //There is no way to make this smaller without added extra ifs. This is because it needs to add 2 if it is 0-1 and remove 2 if 2-3, to get the opposite side.
         if(((side>((SQUARE_SIDES/2)-1))&&(adjacentPipes[side].pipeThere(side-(SQUARE_SIDES/2))))
         ||((side<(SQUARE_SIDES/2))&&(adjacentPipes[side].pipeThere(side+(SQUARE_SIDES/2))))){
             return true;
         }
         return false;
     }
-
+    //This solves an edge case where a node is placed down and is currently flooded, would in the old code would not flood the adjacent node.
     public void floodNodeIfShouldBe(int side){
         if(adjacentNodeHasPipe(side)){
             if(adjacentPipes[side].isWaterHere()){
