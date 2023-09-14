@@ -2,24 +2,33 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v32 - 3/8
+ * @v33 - 15/9
  * 
  * This is the main function, where the frame is 
+ * 
+ * What I need to do to fix my issues:
+ *      - Set hight/width that requires set value to be changed
+ *      - Check said resolution to ensure network is of enough size
+ *      - Check new network to ensure it is large enough
+ *      - Check rescaling of squareSize
+ *      - Check loading has large enough network
  */
 
 //Importing
 
+//Note some of these are commented out, as I am no longer using them I should delete them however I will leave them here until I am finished
+
 import java.util.Scanner;
 
 import javax.swing.*;
-import javax.swing.JFrame; 
-import javax.swing.border.TitledBorder;  
+//import javax.swing.JFrame; 
+//import javax.swing.border.TitledBorder;  
 
-import java.awt.Dimension;
+//import java.awt.Dimension;
 import java.awt.event.*;
 import java.awt.*;
 
-import java.awt.image.BufferedImage;
+//import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
@@ -93,10 +102,12 @@ public class main extends JFrame implements ActionListener, MouseListener
     final String[] SAVE_MESSAGE={"Saves","What would you like to call your save?"};
     final String[] LOAD_MESSAGE={"Loading","What would you like to load? The avalible files are: \n"};
     final String[] FILE_ALREADY_MESSAGE={"File already exists","There is already a save file with this name,\nwould you like to override?"};
-    //Genertic unsaved message
+    //Generic unsaved message
     final String[] UNSAVED_MESSAGE={"Unsaved data","Are you sure you want to do this?\nAll unsaved data will be lost!"};
-    //Genertic error for invaild input
+    //Generic error for invaild input
     final String INVALID_INPUT_MESSAGE="Invaild input, please try again!";
+    //Message for when the player attempts to move out of the map
+    final String INVALID_MOVEMENT_MESSAGE="This is outside the network!";
 
     //The main loop has the init for the UI, but pipe init is in another function. Everything in here I would put above, but am unable to
     public main()
@@ -276,21 +287,22 @@ public class main extends JFrame implements ActionListener, MouseListener
             repaint();
         }
     }
-    //Deals with movement. 
+    //Deals with movement commands. Previously dealed with the actual movement however this was ugly with the fail safes, 
+    //however I have not changed the name of the function to ensure they are consistance
     public void movement(int keyPressed){
         switch(keyPressed){
                 //Here I am using these values that are hard coded, but there isn't a better way, as they are ordered increasing by one, so adding an array would just move the issue onto an array.
             case 0:
-                y-=MOVEMENT_AMOUNT;
+                move(0,-MOVEMENT_AMOUNT);
                 break;
             case 1:
-                x-=MOVEMENT_AMOUNT;
+                move(-MOVEMENT_AMOUNT,0);
                 break;
             case 2:
-                x+=MOVEMENT_AMOUNT;
+                move(MOVEMENT_AMOUNT,0);
                 break;
             case 3:
-                y+=MOVEMENT_AMOUNT;
+                move(0,MOVEMENT_AMOUNT);
                 break;
             default:
                 System.out.println("Error");
@@ -309,7 +321,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                 squareSize=convertStringInputToInt(PIPE_SIZE_CHANGE_MESSAGE,squareSize+"");
                 break;
             default:
-                //This is kept in the terminal because it should be impossible. I will likely remove it.
+                //This is kept in the terminal because it should be impossible. I will likely remove it once I move the error messages to dialog boxes.
                 System.out.println("Error");
         }    
     }
@@ -328,6 +340,20 @@ public class main extends JFrame implements ActionListener, MouseListener
                 break;
             default:
                 System.out.println("Error");
+        }
+    }
+    //Does the actual movement. This was just a better system and if I was using another key input system than hotkeys would allow for easy movement diagonally.
+    public void move(int deltaX, int deltaY){
+        //Checks to see if user can do said movement
+        if(x+deltaX+(getWidth()/squareSize)>xSize ||
+        y+deltaY+(getHeight()/squareSize)>xSize ||
+        x+deltaX<0 || y+deltaY<0){
+            //If they cannot the user will get and error message
+            openBoolDialog(INVALID_INPUT_MESSAGE,INVALID_MOVEMENT_MESSAGE);
+        }else{
+            //Moves by the inputed amount. These are +s as to move backward, a negitive delta value should be given.
+            x+=deltaX;
+            y+=deltaY;
         }
     }
     //Remake the netowrk of a different size. Requires to be remade due to hte nature of java arrays
