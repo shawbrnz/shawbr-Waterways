@@ -2,12 +2,11 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v33 - 15/9
+ * @v34 - 18/9
  * 
  * This is the main function, where the frame is 
  * 
  * What I need to do to fix my issues:
- *      - Set hight/width that requires set value to be changed
  *      - Check said resolution to ensure network is of enough size
  *      - Check new network to ensure it is large enough
  *      - Check rescaling of squareSize
@@ -50,6 +49,9 @@ public class main extends JFrame implements ActionListener, MouseListener
     int ySize=100;
     int x=xSize/2;
     int y=ySize/2;
+    //Resolutions. Given values later
+    int width;
+    int height;
     //Array of the pipes. Third dimension is the edges (Note pipesArray is now 2d, however, some for loops
     //still use the third dimension as the side, so ill leave the comment here)
     pipeNode [][] pipesArray;
@@ -63,8 +65,8 @@ public class main extends JFrame implements ActionListener, MouseListener
     boolean floodMode=false;
     //Menus. This is in one big array because it is so much cleaner like this
     final String[] MENU_NAMES={"Actions","Movement","Network"};
-    final String[][] MENU_ITEMS={{"Change water","Change Pipe Size"},{"Up","Left","Right","Down"},{"Save","Load","Create New"}};
-    final char[][] MENU_SHORTCUT = {{'f','p'},{'w','a','d','s'},{'k','l','c'}};
+    final String[][] MENU_ITEMS={{"Change water","Change Pipe Size"},{"Up","Left","Right","Down"},{"Save","Load","Create New","Change Resolution"}};
+    final char[][] MENU_SHORTCUT = {{'f','p'},{'w','a','d','s'},{'k','l','c','r'}};
     final int ACTION_CONSTANT=0;
     final int MOVEMENT_CONSTANT=1;
     final int SAVE_CONSTANT=2;
@@ -93,7 +95,8 @@ public class main extends JFrame implements ActionListener, MouseListener
     final String[] PIPE_TYPE_NAME = {"Regular","End","Flooded"};
 
     //Dialog messages. I am defining them here so I can easily change them later. They are arrays based on
-    //each dialog, order being title>message.
+    //each dialog, order being title>message. I know the comments are not required, but a giant wall of text 
+    //is difficult to understand.
     final String[] PIPE_SIZE_CHANGE_MESSAGE={"Pipe Size","What do you wish to change the pipe size to?"};
     //Making new network
     final String[] NEW_NETWORK_X_MESSAGE={"New network","What do you wish the X size to be?"};
@@ -108,6 +111,9 @@ public class main extends JFrame implements ActionListener, MouseListener
     final String INVALID_INPUT_MESSAGE="Invaild input, please try again!";
     //Message for when the player attempts to move out of the map
     final String INVALID_MOVEMENT_MESSAGE="This is outside the network!";
+    //Changing resolution
+    final String[] RESOLUTION_X_MESSAGE={"Change Resolution","Please select the new width of the window!"};
+    final String[] RESOLUTION_Y_MESSAGE={"Change Resolution","Please select the new height of the window!"};
 
     //The main loop has the init for the UI, but pipe init is in another function. Everything in here I would put above, but am unable to
     public main()
@@ -115,7 +121,8 @@ public class main extends JFrame implements ActionListener, MouseListener
         //Makes the actual pipe network
         remakeNetwork();
 
-        //Set the window size to the screen size. Slightly broken but it will take a while to get it to work perfectly
+        //Set the window size to the screen size. Slightly broken but it will take a while to get it to work perfectly. Note it does this seperatly from the height and
+        //width variables as they would not have been defined yet and requires this function to occur to work
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         this.setPreferredSize(screenSize);
 
@@ -160,6 +167,10 @@ public class main extends JFrame implements ActionListener, MouseListener
             ioe.printStackTrace();
             System.out.println("Error, file is missing");
         }
+        //Default resolution size. Needs to be done here or else reads width and height as 0
+        width=getWidth()-X_OFFSET;
+        height=getHeight()-Y_OFFSET;
+        repaint();//Required to update resolution size
     }
     //Sets up a new network. Ported from old main function
     public void remakeNetwork(){
@@ -215,22 +226,20 @@ public class main extends JFrame implements ActionListener, MouseListener
         //This is a bit large but it has to due to the nature of rendering everything
         super.paint(g);
         Graphics2D g2=(Graphics2D)g;
-        int width = getWidth();
-        int height = getHeight();
         //Grid
-        for(int i=0;i<=getWidth()/squareSize;i++){
+        for(int i=0;i<=width/squareSize;i++){
             if(!(i>pipesArray.length)){
-                g.drawLine(i*(squareSize)+X_OFFSET, Y_OFFSET, i*(squareSize)+X_OFFSET, ySize*squareSize+Y_OFFSET);
+                g.drawLine(i*(squareSize)+X_OFFSET, Y_OFFSET, i*(squareSize)+X_OFFSET, (height)+Y_OFFSET);
             }else{
-                i=getWidth()/squareSize+1;
+                i=width/squareSize+1;
             }
         }
         //Has to be done twice due to the chance of differing y and x sizes
-        for(int i=0;i<=getHeight()/squareSize;i++){
+        for(int i=0;i<=height/squareSize;i++){
             if(!(i>pipesArray[0].length)){
-                g.drawLine(X_OFFSET, i*(squareSize)+Y_OFFSET, xSize*squareSize+X_OFFSET, i*(squareSize)+Y_OFFSET);
+                g.drawLine(X_OFFSET, i*(squareSize)+Y_OFFSET, width+X_OFFSET, i*(squareSize)+Y_OFFSET);
             }else{
-                i=getHeight()/squareSize+1;
+                i=height/squareSize+1;
             }
         }
         //This renders the pipes. It is a bit laggy, I will define it in main
@@ -271,7 +280,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                         actions(j);//Not required to make these functions and less effeicent but significantly more readable
                     }else if(i==MOVEMENT_CONSTANT){
                         movement(j);
-                    }else if(i==SAVE_CONSTANT){
+                    }else if(i==SAVE_CONSTANT){//The 'network menu' use to be called Save menu, but this name was confusing and conflicted with the save function using the new system
                         network(j);
                     }else{//I am adding an extra line for the error printing as a fail safe and I think it's cleaner
                         System.out.println("Error");
@@ -290,23 +299,26 @@ public class main extends JFrame implements ActionListener, MouseListener
     //Deals with movement commands. Previously dealed with the actual movement however this was ugly with the fail safes, 
     //however I have not changed the name of the function to ensure they are consistance
     public void movement(int keyPressed){
+        int x=0;
+        int y=0;
         switch(keyPressed){
                 //Here I am using these values that are hard coded, but there isn't a better way, as they are ordered increasing by one, so adding an array would just move the issue onto an array.
             case 0:
-                move(0,-MOVEMENT_AMOUNT);
+                y=-MOVEMENT_AMOUNT;
                 break;
             case 1:
-                move(-MOVEMENT_AMOUNT,0);
+                x=-MOVEMENT_AMOUNT;
                 break;
             case 2:
-                move(MOVEMENT_AMOUNT,0);
+                x=MOVEMENT_AMOUNT;
                 break;
             case 3:
-                move(0,MOVEMENT_AMOUNT);
+                y=MOVEMENT_AMOUNT;
                 break;
             default:
                 System.out.println("Error");
         }
+        move(x,y);//I've converted the move system to this function for cleanliness
     }
     //Does the 'actions'
     public void actions(int keyPressed){
@@ -338,6 +350,9 @@ public class main extends JFrame implements ActionListener, MouseListener
             case 2:
                 changeNetworkSize();
                 break;
+            case 3:
+                changeResolution();
+                break;
             default:
                 System.out.println("Error");
         }
@@ -345,8 +360,8 @@ public class main extends JFrame implements ActionListener, MouseListener
     //Does the actual movement. This was just a better system and if I was using another key input system than hotkeys would allow for easy movement diagonally.
     public void move(int deltaX, int deltaY){
         //Checks to see if user can do said movement
-        if(x+deltaX+(getWidth()/squareSize)>xSize ||
-        y+deltaY+(getHeight()/squareSize)>xSize ||
+        if(x+deltaX+(width/squareSize)>xSize ||
+        y+deltaY+(height/squareSize)>xSize ||
         x+deltaX<0 || y+deltaY<0){
             //If they cannot the user will get and error message
             openBoolDialog(INVALID_INPUT_MESSAGE,INVALID_MOVEMENT_MESSAGE);
@@ -360,11 +375,39 @@ public class main extends JFrame implements ActionListener, MouseListener
     public void changeNetworkSize(){
         if(openBoolDialog(UNSAVED_MESSAGE[0], UNSAVED_MESSAGE[1])){
             //Keeps looping to request the new pipe size if they input an invalid case 
-            xSize=convertStringInputToInt(NEW_NETWORK_X_MESSAGE,xSize+"");
+            xSize=convertStringInputToInt(NEW_NETWORK_X_MESSAGE,xSize+"");//using +"" rather than converting to string using function
             //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
             ySize=convertStringInputToInt(NEW_NETWORK_Y_MESSAGE,ySize+"");
             remakeNetwork();
         }
+    }
+    //Changes the size of the resoltion
+    public void changeResolution(){//No save thingy as it does not destroy network
+        boolean checkValidSize=true;
+        while(checkValidSize){
+            //Keeps looping to request the new pipe size if they input an invalid case 
+            width=convertStringInputToInt(RESOLUTION_X_MESSAGE,getWidth()+"");
+            //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
+            height=convertStringInputToInt(RESOLUTION_Y_MESSAGE,getHeight()+"");
+            //Checks to see if the size is valid
+            if(checkNetworkSize(xSize,ySize,width,height)){
+                checkValidSize=false;
+            }
+        }
+        //Updates window size
+        setPreferredSize(new Dimension(width,height));
+        this.setSize(width,height);
+    }//No need to repaint as it does that every menu update
+    //This is used to check if a new network or resolution size is large enough to avoid attempting to render non existant tiles. True means safe, false, means that the program would return an error
+    public boolean checkNetworkSize(int newXSize,int newYSize,int newXResolution, int newYResolution){
+        //Currently blank
+        if(newXSize*squareSize<newXResolution){//Checks to see if the new X is too large
+            return true;
+        }
+        if(newYSize*squareSize<newYResolution){//Checks to see if the new Y is too large
+            return false;
+        }
+        return true;//Assuming current methods, if it hasnt been triggered it should be safe.
     }
     //These are required, dispite the fact that they are not used.
     public void mouseExited(MouseEvent e){}
