@@ -2,14 +2,15 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v35 - 21/9
+ * @v36 - 22/9
  * 
  * This is the main function, where the frame is. 
  * 
  * Note, there are some extra comments which while dont seem very helpful, greatly increases readability in some cases.
  * 
  * What I need to do to fix my issues:
- *      - Fixed my bug.
+ *      - Help function.
+ *      - Fix the x from breaking everything in dialog boxs
  */
 
 //Importing
@@ -59,12 +60,13 @@ public class main extends JFrame implements ActionListener, MouseListener
     //The mode types. Currently just flood but should be able to easily add more
     boolean floodMode=false;
     //Menus. This is in one big array because it is so much cleaner like this
-    final String[] MENU_NAMES={"Actions","Movement","Network"};
-    final String[][] MENU_ITEMS={{"Change water","Change Pipe Size"},{"Up","Left","Right","Down"},{"Save","Load","Create New","Change Resolution"}};
-    final char[][] MENU_SHORTCUT = {{'f','p'},{'w','a','d','s'},{'k','l','c','r'}};
+    final String[] MENU_NAMES={"Actions","Movement","Network","Help"};
+    final String[][] MENU_ITEMS={{"Flood/Dry tiles"},{"Up","Left","Right","Down"},{"Save","Load","Create New","Change Resolution","Change Pipe Size"},{"Placing Pipes","Actions","Hotkeys"}};
+    final char[][] MENU_SHORTCUT = {{'f'},{'w','a','d','s'},{'k','l','c','r','p'},{'h','h','h'}};//Need hotkeys for menus that should not have hotkeys. This would be an issue if not for majority of menus having a hotkey anyway. Solution was to give a double up of the h hotkey
     final int ACTION_CONSTANT=0;
     final int MOVEMENT_CONSTANT=1;
-    final int SAVE_CONSTANT=2;
+    final int SAVE_CONSTANT=2;//There is likely a cleaner way to do this, however considering its purpose, it is fine
+    final int HELP_CONSTANT=3;
     //I tried to use keyboard listener for movement but I couldn't get them working so I decided to use hotkeys
     final int MOVEMENT_AMOUNT=1;
 
@@ -91,7 +93,7 @@ public class main extends JFrame implements ActionListener, MouseListener
 
     //Dialog messages. I am defining them here so I can easily change them later. They are arrays based on
     //each dialog, order being title>message. I know the comments are not required, but a giant wall of text 
-    //is difficult to understand.
+    //is difficult to understand. I could define this somewhere else but it is here.
     final String[] PIPE_SIZE_CHANGE_MESSAGE={"Pipe Size","What do you wish to change the pipe size to?"};
     //Making new network
     final String[] NEW_NETWORK_X_MESSAGE={"New network","What do you wish the X size to be?"};
@@ -114,6 +116,13 @@ public class main extends JFrame implements ActionListener, MouseListener
     final String[] NETWORK_SIZE_MESSAGE={"Network size too small","This size is too small! \nPlease try again with a larger network or decrease the resolution!"};
     final String[] SQUARE_SIZE_MESSAGE={"Square size too small","This size is too small! \nPlease try again with a larger network or decrease the resolution!"};
     final String[] LOAD_SIZE_MESSAGE={"Loaded Network size too small","The size this network is too small! \nPlease try again with a larger network or decrease the resolution!"};
+    //Generic error messages
+    final String[] ERROR_MESSAGE={"Error","There was an error, please try again!"};
+    final String FILE_ERROR_MESSAGE="There is a missing file!";
+    //The help
+    final String[] HELP_MESSAGE={"Help","To Place down a pipe, click on a tile on the grid. If you wish to place a line, drag across multiple tiles!",
+        "To preform an action, click the action in the menu (or use the hotkey) and click on the tile you wish to preform the action on! \nYou need to click the action in the menu (or use the hotkey) to deactivate it!",
+        "Hotkeys allow you to quickly active a menu item by pressing that item's corresponding key! To find the corresponding key of an item, look to the right of the item!"};
 
     //The main loop has the init for the UI, but pipe init is in another function. Everything in here I would put above, but am unable to
     public main()
@@ -165,7 +174,7 @@ public class main extends JFrame implements ActionListener, MouseListener
             }
         }catch (java.io.IOException ioe){
             ioe.printStackTrace();
-            System.out.println("Error, file is missing");
+            openBoolDialog(ERROR_MESSAGE[0],FILE_ERROR_MESSAGE);
         }
         //Default resolution size. Needs to be done here or else reads width and height as 0
         width=getWidth()-X_OFFSET;
@@ -282,8 +291,10 @@ public class main extends JFrame implements ActionListener, MouseListener
                         movement(j);
                     }else if(i==SAVE_CONSTANT){//The 'network menu' use to be called Save menu, but this name was confusing and conflicted with the save function using the new system
                         network(j);
+                    }else if(i==HELP_CONSTANT){//The 'network menu' use to be called Save menu, but this name was confusing and conflicted with the save function using the new system
+                        help(j);
                     }else{//I am adding an extra line for the error printing as a fail safe and I think it's cleaner
-                        System.out.println("Error");
+                        openBoolDialog(ERROR_MESSAGE[0],ERROR_MESSAGE[1]);
                     }
                     //There is  else as a fail safe and cleaner code
 
@@ -303,15 +314,10 @@ public class main extends JFrame implements ActionListener, MouseListener
             case 0:
                 //It just toggles it. No need to test whether it is already enabled anymore
                 floodMode=!floodMode;
-                break;
-            case 1:
-                //This is now one line so I left it here, now it is a couple more I moved it
-                changeSquareSize();
-
-                break;
+                break;//The only action now is flooding but I am leaving this here for expanability
             default:
                 //This is kept in the terminal because it should be impossible. I will likely remove it once I move the error messages to dialog boxes.
-                System.out.println("Error");
+                openBoolDialog(ERROR_MESSAGE[0],ERROR_MESSAGE[1]);
         }    
     }
     //Deals with movement commands. Previously dealed with the actual movement however this was ugly with the fail safes, 
@@ -334,7 +340,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                 y=MOVEMENT_AMOUNT;
                 break;
             default:
-                System.out.println("Error");
+                openBoolDialog(ERROR_MESSAGE[0],ERROR_MESSAGE[1]);
         }
         move(x,y);//I've converted the move system to this function for cleanliness
     }
@@ -355,8 +361,16 @@ public class main extends JFrame implements ActionListener, MouseListener
                 changeResolution();
                 break;
             default:
-                System.out.println("Error");
+                openBoolDialog(ERROR_MESSAGE[0],ERROR_MESSAGE[1]);
         }
+    }
+    //Helps the user
+    public void help(int keyPressed){//If the hotkey is pressed then only the first one will work, however that is the most important one anyway
+        //The help message should contain all that is required for the help
+        openBoolDialog(HELP_MESSAGE[0],HELP_MESSAGE[keyPressed+1]);//Need to add 1 because the first item in the array is the title
+        /*default:
+        openBoolDialog(ERROR_MESSAGE[0],ERROR_MESSAGE[1]);*/
+
     }
     //Does the actual movement. This was just a better system and if I was using another key input system than hotkeys would allow for easy movement diagonally.
     public void move(int deltaX, int deltaY){
@@ -502,6 +516,10 @@ public class main extends JFrame implements ActionListener, MouseListener
         //and right up and only checking 1 and 3 once, however this hardly gets run except in one case
         //so I decided to leave it like this. Not using else ifs because returns
 
+        //It finds what triangle was clicked by first splitting the tile into 4 smaller tiles. This is because it is much easier to hitbox an isosceles right angle triangle. 
+        //It then finds what side of the triangle it is on. These values are hard coded as there is no way for the maths to be changed if they are still squares and the number
+        //that is returned is the side of the square that is saved by both the pipeNodes and also the rest of the program
+        
         //Top left
         if(squareSize/2>=xClicked&&squareSize/2>=yClicked){
             if((xClicked>(yClicked))){
@@ -544,7 +562,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         int xNode2Location=xNode2/squareSize;
         int yNode1Location=yNode1/squareSize;//I am using the fact that java rounds a lot here
         int yNode2Location=yNode2/squareSize;
-
+        //This finds whether the pipe is up or down
         int numberOfTilesOnX=Math.abs(xNode1Location-xNode2Location);//While I could have put this straight into the funciton it would require repeating these
         int numberOfTilesOnY=Math.abs(yNode1Location-yNode2Location);
 
@@ -555,11 +573,11 @@ public class main extends JFrame implements ActionListener, MouseListener
             }else{
                 pipeLine(xNode2,xNode1,yNode2,yNode2,true);
             }
-        }else if(numberOfTilesOnX==numberOfTilesOnY){
-            //If there is only 1 tile
+        }else if(numberOfTilesOnX==numberOfTilesOnY&&numberOfTilesOnX==0){//Requres to be =0 to ensure it is not just diagonal
+            //If there is only 1 tile, it uses subsquares. 
             pipeNode selectedNode=pipesArray[xNode1Location+x][yNode1Location+y];
             selectedNode.swapPipe(subSquares(yNode1%squareSize,xNode1%squareSize,squareSize));//This is the one use case for subSquares I meantioned eariler. It was used a lot more but I added the dragging
-        }else{
+        }else{//This will run the y on diagonal, but I think that is better than not doing anything on diagonal
             //'Drags' the y
             if(yNode1Location<yNode2Location){
                 pipeLine(xNode1,xNode1,yNode1,yNode2,false);
@@ -653,7 +671,7 @@ public class main extends JFrame implements ActionListener, MouseListener
             }
         }
     }
-    //Used only by the function above. 
+    //Used only by the function above, however used multiple times. 
     public void processEndNodes(boolean twoPipes, int smallSize, pipeNode nodeToSwap, int directionOfOtherSide, boolean stateToConvertTo){
         nodeToSwap.forcePipe(smallSize,stateToConvertTo);
         if(twoPipes){
@@ -735,7 +753,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                 fileWriter.close();
             }
         }catch(IOException e){
-            System.out.println(e);//This occurs throughout the code, but I decided to talk about it here, but this is here because I need to inform if there is an error with file stuff, but I removed all other System.out.prinlns
+            openBoolDialog(ERROR_MESSAGE[0],e+"");//This occurs throughout the code, but I decided to talk about it here, but this is here because I need to inform if there is an error with file stuff, but I removed all other System.out.prinlns
         }
     }
     //Loads a saved network
@@ -757,7 +775,6 @@ public class main extends JFrame implements ActionListener, MouseListener
                     boolean isAvalible=false;
                     //Tests to see is it exists
                     for(int i=0;i<avalibleSaves.length;i++){
-                        System.out.println(avalibleSavesArray[i]);
                         if(avalibleSavesArray[i].equals(fileName)){
                             isAvalible=true;
                         }
@@ -769,7 +786,6 @@ public class main extends JFrame implements ActionListener, MouseListener
                         Scanner fileReader=new Scanner(saveFile);
                         String[] saveData=fileReader.nextLine().split(SAVE_SEPERATOR);
 
-                        //System.out.println(fileReader.nextLine());
                         //Parses the string to an int, no need to check if it actually is an int as currently in try
                         //I am using 'magic numbers' here, however these do not ever need to be changed, as more of these
                         //vlaues can be added at the end, and I see no way to put the entirety of varibles into an array
@@ -814,7 +830,7 @@ public class main extends JFrame implements ActionListener, MouseListener
                     }
                 }
             }catch(IOException e){
-                System.out.println(e);
+                openBoolDialog(ERROR_MESSAGE[0],e+"");//I used +"" because its faster than me trying to find the actual function to convert io exceptions into strings, and it only runs once anyway
             }
         }
     }
