@@ -2,15 +2,14 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v34 - 18/9
+ * @v35 - 21/9
  * 
- * This is the main function, where the frame is 
+ * This is the main function, where the frame is. 
+ * 
+ * Note, there are some extra comments which while dont seem very helpful, greatly increases readability in some cases.
  * 
  * What I need to do to fix my issues:
- *      - Check said resolution to ensure network is of enough size
- *      - Check new network to ensure it is large enough
- *      - Check rescaling of squareSize
- *      - Check loading has large enough network
+ *      - Fixed my bug.
  */
 
 //Importing
@@ -20,14 +19,10 @@
 import java.util.Scanner;
 
 import javax.swing.*;
-//import javax.swing.JFrame; 
-//import javax.swing.border.TitledBorder;  
 
-//import java.awt.Dimension;
 import java.awt.event.*;
 import java.awt.*;
 
-//import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
@@ -114,6 +109,11 @@ public class main extends JFrame implements ActionListener, MouseListener
     //Changing resolution
     final String[] RESOLUTION_X_MESSAGE={"Change Resolution","Please select the new width of the window!"};
     final String[] RESOLUTION_Y_MESSAGE={"Change Resolution","Please select the new height of the window!"};
+    //Error messages if the new resolution/network size will break the program
+    final String[] RESOLUTION_SIZE_MESSAGE={"Resolution size too large","This size is too large! \nPlease try again with a smaller resolution or increase the size of the network!"};
+    final String[] NETWORK_SIZE_MESSAGE={"Network size too small","This size is too small! \nPlease try again with a larger network or decrease the resolution!"};
+    final String[] SQUARE_SIZE_MESSAGE={"Square size too small","This size is too small! \nPlease try again with a larger network or decrease the resolution!"};
+    final String[] LOAD_SIZE_MESSAGE={"Loaded Network size too small","The size this network is too small! \nPlease try again with a larger network or decrease the resolution!"};
 
     //The main loop has the init for the UI, but pipe init is in another function. Everything in here I would put above, but am unable to
     public main()
@@ -285,9 +285,9 @@ public class main extends JFrame implements ActionListener, MouseListener
                     }else{//I am adding an extra line for the error printing as a fail safe and I think it's cleaner
                         System.out.println("Error");
                     }
-                    //There is no else as a fail safe and cleaner code
+                    //There is  else as a fail safe and cleaner code
 
-                    //This breaks the for loop without using the break command, because you didn't like them outside of cases 
+                    //This breaks the for loop without using the break command, because you didn't like us using them outside of switchs 
                     i=MENU_ITEMS.length-1;
                     j=MENU_ITEMS[i].length-1;
                 }
@@ -295,6 +295,24 @@ public class main extends JFrame implements ActionListener, MouseListener
             //Repaints it no matter what 
             repaint();
         }
+    }
+    //Does the 'actions'. Note, this is a actualy actions not the hotkeys which is what was reffered to in last function. These names originated from my original poor menu system
+    public void actions(int keyPressed){
+        switch(keyPressed){
+                //I think I found an actual use for switchs
+            case 0:
+                //It just toggles it. No need to test whether it is already enabled anymore
+                floodMode=!floodMode;
+                break;
+            case 1:
+                //This is now one line so I left it here, now it is a couple more I moved it
+                changeSquareSize();
+
+                break;
+            default:
+                //This is kept in the terminal because it should be impossible. I will likely remove it once I move the error messages to dialog boxes.
+                System.out.println("Error");
+        }    
     }
     //Deals with movement commands. Previously dealed with the actual movement however this was ugly with the fail safes, 
     //however I have not changed the name of the function to ensure they are consistance
@@ -319,23 +337,6 @@ public class main extends JFrame implements ActionListener, MouseListener
                 System.out.println("Error");
         }
         move(x,y);//I've converted the move system to this function for cleanliness
-    }
-    //Does the 'actions'
-    public void actions(int keyPressed){
-        switch(keyPressed){
-                //I think I found an actual use for switchs
-            case 0:
-                //It just toggles it. No need to test whether it is already enabled anymore
-                floodMode=!floodMode;
-                break;
-            case 1:
-                //This is now one line so I left it here
-                squareSize=convertStringInputToInt(PIPE_SIZE_CHANGE_MESSAGE,squareSize+"");
-                break;
-            default:
-                //This is kept in the terminal because it should be impossible. I will likely remove it once I move the error messages to dialog boxes.
-                System.out.println("Error");
-        }    
     }
     //Deals with 'network stuff'. I referred to this menu as 'save' however I have tried to change it to network to avoid confusion.
     public void network(int keyPressed){
@@ -373,12 +374,38 @@ public class main extends JFrame implements ActionListener, MouseListener
     }
     //Remake the netowrk of a different size. Requires to be remade due to hte nature of java arrays
     public void changeNetworkSize(){
-        if(openBoolDialog(UNSAVED_MESSAGE[0], UNSAVED_MESSAGE[1])){
-            //Keeps looping to request the new pipe size if they input an invalid case 
-            xSize=convertStringInputToInt(NEW_NETWORK_X_MESSAGE,xSize+"");//using +"" rather than converting to string using function
-            //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
-            ySize=convertStringInputToInt(NEW_NETWORK_Y_MESSAGE,ySize+"");
-            remakeNetwork();
+        if(openBoolDialog(UNSAVED_MESSAGE[0], UNSAVED_MESSAGE[1])){//Asks if the user really wishes to do this
+            boolean checkValidSize=true;
+            while(checkValidSize){//This is not the cleanest way, but it is the fastest for me to make
+                //Keeps looping to request the new pipe size if they input an invalid case 
+                int tempXSize=convertStringInputToInt(NEW_NETWORK_X_MESSAGE,xSize+"");//using +"" rather than converting to string using function
+                //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
+                int tempYSize=convertStringInputToInt(NEW_NETWORK_Y_MESSAGE,ySize+"");
+                //Checks to see if the size is valid
+                if(checkNewNetworkSize(tempXSize,tempYSize,width,height,squareSize)){
+                    checkValidSize=false;
+                    //Actually makes new netowrk
+                    xSize=tempXSize;
+                    ySize=tempYSize;
+                    remakeNetwork();
+                }else{
+                    checkValidSize=openBoolDialog(NETWORK_SIZE_MESSAGE[0],NETWORK_SIZE_MESSAGE[1]);
+                }
+            }
+        }
+    }
+    //Changes the square size. Originally one line but varification requires multiple and would be more annoying to make varification into a proper function with so few things that use it
+    //expecally considering this bug is going to be the last thing I do on this stupid project.
+    public void changeSquareSize(){
+        boolean checkValidSize=true;
+        while(checkValidSize){
+            int tempSquareSize=convertStringInputToInt(PIPE_SIZE_CHANGE_MESSAGE,squareSize+"");
+            if(checkNewNetworkSize(xSize,ySize,width,height,tempSquareSize)){
+                checkValidSize=false;
+                squareSize=tempSquareSize;
+            }else{
+                checkValidSize=openBoolDialog(SQUARE_SIZE_MESSAGE[0],SQUARE_SIZE_MESSAGE[1]);
+            }
         }
     }
     //Changes the size of the resoltion
@@ -386,12 +413,17 @@ public class main extends JFrame implements ActionListener, MouseListener
         boolean checkValidSize=true;
         while(checkValidSize){
             //Keeps looping to request the new pipe size if they input an invalid case 
-            width=convertStringInputToInt(RESOLUTION_X_MESSAGE,getWidth()+"");
+            int tempWidth=convertStringInputToInt(RESOLUTION_X_MESSAGE,getWidth()+"");
             //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
-            height=convertStringInputToInt(RESOLUTION_Y_MESSAGE,getHeight()+"");
+            int tempHeight=convertStringInputToInt(RESOLUTION_Y_MESSAGE,getHeight()+"");
             //Checks to see if the size is valid
-            if(checkNetworkSize(xSize,ySize,width,height)){
+            if(checkNewNetworkSize(xSize,ySize,tempWidth,tempHeight,squareSize)){
                 checkValidSize=false;
+                //Actually refinds them
+                height=tempHeight;
+                width=tempWidth;
+            }else{
+                checkValidSize=openBoolDialog(RESOLUTION_SIZE_MESSAGE[0],RESOLUTION_SIZE_MESSAGE[1]);//If they click no, then it closes the menu
             }
         }
         //Updates window size
@@ -399,12 +431,12 @@ public class main extends JFrame implements ActionListener, MouseListener
         this.setSize(width,height);
     }//No need to repaint as it does that every menu update
     //This is used to check if a new network or resolution size is large enough to avoid attempting to render non existant tiles. True means safe, false, means that the program would return an error
-    public boolean checkNetworkSize(int newXSize,int newYSize,int newXResolution, int newYResolution){
+    public boolean checkNewNetworkSize(int newXSize,int newYSize,int newXResolution, int newYResolution, int newSquareSize){
         //Currently blank
-        if(newXSize*squareSize<newXResolution){//Checks to see if the new X is too large
-            return true;
+        if(newXSize*newSquareSize<newXResolution){//Checks to see if the new X is too large
+            return false;
         }
-        if(newYSize*squareSize<newYResolution){//Checks to see if the new Y is too large
+        if(newYSize*newSquareSize<newYResolution){//Checks to see if the new Y is too large
             return false;
         }
         return true;//Assuming current methods, if it hasnt been triggered it should be safe.
@@ -537,7 +569,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         }
 
     }
-    //Puts a line of pipes down.
+    //Puts a line of pipes down. This is a long piece of code, however it is mostly just initalising.
     public void pipeLine(int x1,int x2,int y1,int y2, boolean xDirection){
         //Finds the first node
         pipeNode firstNode=pipesArray[x1/squareSize+x][y1/squareSize+y];
@@ -742,26 +774,39 @@ public class main extends JFrame implements ActionListener, MouseListener
                         //I am using 'magic numbers' here, however these do not ever need to be changed, as more of these
                         //vlaues can be added at the end, and I see no way to put the entirety of varibles into an array
 
-                        xSize=Integer.parseInt(saveData[0]);
-                        ySize=Integer.parseInt(saveData[1]);
-                        x=Integer.parseInt(saveData[2]);
-                        y=Integer.parseInt(saveData[3]);
-                        squareSize=Integer.parseInt(saveData[4]);
-                        remakeNetwork();
-                        //Pipe data
-                        for(int i=METADATA_SIZE;i<((saveData.length))-1;i=i+PIPEDATA_SIZE){
-                            pipeNode selectedNode=pipesArray[Integer.parseInt((saveData[i]))][Integer.parseInt(saveData[((i+1))])];
-                            //I am using prime numbers to save the states of each node of the pipe
-                            for(int k=0;k<SQUARE_SIDES;k++){
-                                if((Integer.parseInt(saveData[i+2]))%PRIME_NUMBERS[k]==0){
-                                    //Here I am using force node so that it does have to process water as much
-                                    selectedNode.forcePipe(k,true);
+                        //This is used for varification. 
+                        boolean checkValidSize=true;
+                        while(checkValidSize){
+                            int tempXSize=Integer.parseInt(saveData[0]);
+                            int tempYSize=Integer.parseInt(saveData[1]);
+
+                            if(checkNewNetworkSize(tempXSize,tempYSize,width,height,squareSize)){
+                                checkValidSize=false;
+                                xSize=tempXSize;
+                                ySize=tempYSize;
+                                x=Integer.parseInt(saveData[2]);
+                                y=Integer.parseInt(saveData[3]);
+                                squareSize=Integer.parseInt(saveData[4]);
+                                remakeNetwork();
+                                //Pipe data
+                                for(int i=METADATA_SIZE;i<((saveData.length))-1;i=i+PIPEDATA_SIZE){
+                                    pipeNode selectedNode=pipesArray[Integer.parseInt((saveData[i]))][Integer.parseInt(saveData[((i+1))])];
+                                    //I am using prime numbers to save the states of each node of the pipe
+                                    for(int k=0;k<SQUARE_SIDES;k++){
+                                        if((Integer.parseInt(saveData[i+2]))%PRIME_NUMBERS[k]==0){
+                                            //Here I am using force node so that it does have to process water as much
+                                            selectedNode.forcePipe(k,true);
+                                        }
+                                        if(Integer.parseInt((saveData[i+3]))==YES_WATER_INT){
+                                            selectedNode.flood(true);
+                                        }
+                                    }
                                 }
-                                if(Integer.parseInt((saveData[i+3]))==YES_WATER_INT){
-                                    selectedNode.flood(true);
-                                }
+                            }else{
+                                checkValidSize=openBoolDialog(LOAD_SIZE_MESSAGE[0],LOAD_SIZE_MESSAGE[1]);
                             }
                         }
+
                         //I have decided to include some examples which will mean this should never run. I have added a failsafe just in case though, which I removed and instead do what is happening now
                         //There use to be an extra ifelse and then an else which was here, which is why this comment is here
                     }else{
@@ -791,5 +836,6 @@ public class main extends JFrame implements ActionListener, MouseListener
  * Whether it is flooded or not- //Will be a 1/0
  * //Note, Im not storing adjacent node or their locations
  * //I will be processing and assigning these on load
+ * //I am trying to be as space effeicent as a can reasonably be, at least while using regualr file rather than a proper save file system.
  */
 
