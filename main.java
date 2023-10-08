@@ -2,15 +2,13 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v36 - 22/9
+ * @v37 - 9/10
  * 
  * This is the main function, where the frame is. 
  * 
  * Note, there are some extra comments which while dont seem very helpful, greatly increases readability in some cases.
  * 
  * What I need to do to fix my issues:
- *      - Help function.
- *      - Fix the x from breaking everything in dialog boxs
  */
 
 //Importing
@@ -106,8 +104,11 @@ public class main extends JFrame implements ActionListener, MouseListener
     final String[] UNSAVED_MESSAGE={"Unsaved data","Are you sure you want to do this?\nAll unsaved data will be lost!"};
     //Generic error for invaild input
     final String INVALID_INPUT_MESSAGE="Invaild input, please try again!";
-    //Message for when the player attempts to move out of the map
+    //Message for when the user attempts to move out of the map
     final String INVALID_MOVEMENT_MESSAGE="This is outside the network!";
+    //Message for when the user attempts to input a value that is too large
+    final String[] TOO_LARGE_MESSAGE={"Selected size too large","This size is too large! \nPlease try again with a smaller size!"};
+    final int[] MAX_SIZE={499,999,9999};//This is the max size or else the user can input a value to large. These come in three sizes, Small, medium and large. 
     //Changing resolution
     final String[] RESOLUTION_X_MESSAGE={"Change Resolution","Please select the new width of the window!"};
     final String[] RESOLUTION_Y_MESSAGE={"Change Resolution","Please select the new height of the window!"};
@@ -121,8 +122,8 @@ public class main extends JFrame implements ActionListener, MouseListener
     final String FILE_ERROR_MESSAGE="There is a missing file!";
     //The help
     final String[] HELP_MESSAGE={"Help","To Place down a pipe, click on a tile on the grid. If you wish to place a line, drag across multiple tiles!",
-        "To preform an action, click the action in the menu (or use the hotkey) and click on the tile you wish to preform the action on! \nYou need to click the action in the menu (or use the hotkey) to deactivate it!",
-        "Hotkeys allow you to quickly active a menu item by pressing that item's corresponding key! To find the corresponding key of an item, look to the right of the item!"};
+            "To preform an action, click the action in the menu (or use the hotkey) and click on the tile you wish to preform the action on! \nYou need to click the action in the menu (or use the hotkey) to deactivate it!",
+            "Hotkeys allow you to quickly active a menu item by pressing that item's corresponding key! To find the corresponding key of an item, look to the right of the item!"};
 
     //The main loop has the init for the UI, but pipe init is in another function. Everything in here I would put above, but am unable to
     public main()
@@ -360,6 +361,9 @@ public class main extends JFrame implements ActionListener, MouseListener
             case 3:
                 changeResolution();
                 break;
+            case 4:
+                changeSquareSize();
+                break;
             default:
                 openBoolDialog(ERROR_MESSAGE[0],ERROR_MESSAGE[1]);
         }
@@ -368,9 +372,6 @@ public class main extends JFrame implements ActionListener, MouseListener
     public void help(int keyPressed){//If the hotkey is pressed then only the first one will work, however that is the most important one anyway
         //The help message should contain all that is required for the help
         openBoolDialog(HELP_MESSAGE[0],HELP_MESSAGE[keyPressed+1]);//Need to add 1 because the first item in the array is the title
-        /*default:
-        openBoolDialog(ERROR_MESSAGE[0],ERROR_MESSAGE[1]);*/
-
     }
     //Does the actual movement. This was just a better system and if I was using another key input system than hotkeys would allow for easy movement diagonally.
     public void move(int deltaX, int deltaY){
@@ -392,18 +393,28 @@ public class main extends JFrame implements ActionListener, MouseListener
             boolean checkValidSize=true;
             while(checkValidSize){//This is not the cleanest way, but it is the fastest for me to make
                 //Keeps looping to request the new pipe size if they input an invalid case 
-                int tempXSize=convertStringInputToInt(NEW_NETWORK_X_MESSAGE,xSize+"");//using +"" rather than converting to string using function
-                //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
-                int tempYSize=convertStringInputToInt(NEW_NETWORK_Y_MESSAGE,ySize+"");
-                //Checks to see if the size is valid
-                if(checkNewNetworkSize(tempXSize,tempYSize,width,height,squareSize)){
+                int tempXSize=convertStringInputToInt(NEW_NETWORK_X_MESSAGE,xSize+"",1);//using +"" rather than converting to string using function
+                if(tempXSize>0){//I expalin this in changeResolution
+                    //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
+                    int tempYSize=convertStringInputToInt(NEW_NETWORK_Y_MESSAGE,ySize+"",1);
+                    if(tempYSize>0){//Tests to see if it is blank, thus user clicked the 'x'. This is not a part of the other if because 
+                        //then it would display the network size message if the 'x' was clicked. >0 because it shouldnt be less than 0 anyway
+
+                        //Checks to see if the size is valid
+                        if(checkNewNetworkSize(tempXSize,tempYSize,width,height,squareSize)){
+                            checkValidSize=false;
+                            //Actually makes new netowrk
+                            xSize=tempXSize;
+                            ySize=tempYSize;
+                            remakeNetwork();
+                        }else{
+                            checkValidSize=openBoolDialog(NETWORK_SIZE_MESSAGE[0],NETWORK_SIZE_MESSAGE[1]);
+                        }
+                    }else{//Breaks the loop, as the user has clicked the 'x'
+                        checkValidSize=false;
+                    }
+                }else{//Breaks the loop, as the user has clicked the 'x'
                     checkValidSize=false;
-                    //Actually makes new netowrk
-                    xSize=tempXSize;
-                    ySize=tempYSize;
-                    remakeNetwork();
-                }else{
-                    checkValidSize=openBoolDialog(NETWORK_SIZE_MESSAGE[0],NETWORK_SIZE_MESSAGE[1]);
                 }
             }
         }
@@ -413,12 +424,16 @@ public class main extends JFrame implements ActionListener, MouseListener
     public void changeSquareSize(){
         boolean checkValidSize=true;
         while(checkValidSize){
-            int tempSquareSize=convertStringInputToInt(PIPE_SIZE_CHANGE_MESSAGE,squareSize+"");
-            if(checkNewNetworkSize(xSize,ySize,width,height,tempSquareSize)){
+            int tempSquareSize=convertStringInputToInt(PIPE_SIZE_CHANGE_MESSAGE,squareSize+"",0);
+            if(tempSquareSize>0){
+                if(checkNewNetworkSize(xSize,ySize,width,height,tempSquareSize)){
+                    checkValidSize=false;
+                    squareSize=tempSquareSize;
+                }else{
+                    checkValidSize=openBoolDialog(SQUARE_SIZE_MESSAGE[0],SQUARE_SIZE_MESSAGE[1]);
+                }
+            }else{//Breaks the loop
                 checkValidSize=false;
-                squareSize=tempSquareSize;
-            }else{
-                checkValidSize=openBoolDialog(SQUARE_SIZE_MESSAGE[0],SQUARE_SIZE_MESSAGE[1]);
             }
         }
     }
@@ -427,17 +442,26 @@ public class main extends JFrame implements ActionListener, MouseListener
         boolean checkValidSize=true;
         while(checkValidSize){
             //Keeps looping to request the new pipe size if they input an invalid case 
-            int tempWidth=convertStringInputToInt(RESOLUTION_X_MESSAGE,getWidth()+"");
-            //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
-            int tempHeight=convertStringInputToInt(RESOLUTION_Y_MESSAGE,getHeight()+"");
-            //Checks to see if the size is valid
-            if(checkNewNetworkSize(xSize,ySize,tempWidth,tempHeight,squareSize)){
+            int tempWidth=convertStringInputToInt(RESOLUTION_X_MESSAGE,getWidth()+"",2);
+            if(tempWidth>0){//This needs to happen twice, as otherwise it would appear again if the user clicked 'x'
+                //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
+                int tempHeight=convertStringInputToInt(RESOLUTION_Y_MESSAGE,getHeight()+"",2);
+                //I explained this in the changeNetworkSize function. While I should have put this in the function itself, that would require me to rework the entire function, which would not be worth it
+                if(tempHeight>0){
+                    //Checks to see if the size is valid
+                    if(checkNewNetworkSize(xSize,ySize,tempWidth,tempHeight,squareSize)){
+                        checkValidSize=false;
+                        //Actually refinds them
+                        height=tempHeight;
+                        width=tempWidth;
+                    }else{
+                        checkValidSize=openBoolDialog(RESOLUTION_SIZE_MESSAGE[0],RESOLUTION_SIZE_MESSAGE[1]);//If they click no, then it closes the menu
+                    }
+                }else{//Breaks the loop
+                    checkValidSize=false;
+                }//Could make a cleaner way using a temp variable, but I don't want to create another temp variable
+            }else{//Breaks the loop
                 checkValidSize=false;
-                //Actually refinds them
-                height=tempHeight;
-                width=tempWidth;
-            }else{
-                checkValidSize=openBoolDialog(RESOLUTION_SIZE_MESSAGE[0],RESOLUTION_SIZE_MESSAGE[1]);//If they click no, then it closes the menu
             }
         }
         //Updates window size
@@ -519,7 +543,7 @@ public class main extends JFrame implements ActionListener, MouseListener
         //It finds what triangle was clicked by first splitting the tile into 4 smaller tiles. This is because it is much easier to hitbox an isosceles right angle triangle. 
         //It then finds what side of the triangle it is on. These values are hard coded as there is no way for the maths to be changed if they are still squares and the number
         //that is returned is the side of the square that is saved by both the pipeNodes and also the rest of the program
-        
+
         //Top left
         if(squareSize/2>=xClicked&&squareSize/2>=yClicked){
             if((xClicked>(yClicked))){
@@ -691,17 +715,23 @@ public class main extends JFrame implements ActionListener, MouseListener
         return (input==0);//This means it returns falsue unless yes was clicked
     }
     //This ensures the input is valid. Valid means no non number characters (i.e. '2', yes, 'a', no, '.', no- this removes decimals) and >0 
-    public int convertStringInputToInt(String[] messages, String defaultText){//I ask for the entire message array because its better
+    public int convertStringInputToInt(String[] messages, String defaultText,int sizeLimit){//I ask for the entire message array because its better
         String dialogInput=openDialog(messages[0], messages[1],defaultText);
-        while(true){//Dont need a break statement as there is a return
+        while(!(dialogInput==null)){//Dont need a break statement as there is a return, ensures that it does not = null
             if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad.
-                if(Integer.parseInt(dialogInput)>0){//As all of the program requires the ints that are given by the user to be >1, this function will never accept 0<
-                    return Integer.parseInt(dialogInput);
+                int temptInt=Integer.parseInt(dialogInput);
+                if(temptInt>0){//As all of the program requires the ints that are given by the user to be >1, this function will never accept 0<
+                    if(temptInt>MAX_SIZE[sizeLimit]){
+                        openBoolDialog(TOO_LARGE_MESSAGE[0],TOO_LARGE_MESSAGE[1]);
+                        return -1;//This uses the system for if the user clicks on the 'x', however they have the same outcome so this is fine
+                    }
+                    return temptInt;
                 }
             }else{
                 dialogInput=openDialog(messages[0], messages[1]+"\n"+INVALID_INPUT_MESSAGE, defaultText);
             }
         }
+        return -1;//Using -1, as it required ot return a int, and it cannot otherwise enter a negitive due to '-' being caught
     }
     //Saves a network
     public void save(){
