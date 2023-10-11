@@ -2,7 +2,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v37 - 9/10
+ * @v38 - 12/10
  * 
  * This is the main function, where the frame is. 
  * 
@@ -57,6 +57,7 @@ public class main extends JFrame implements ActionListener, MouseListener
     int yClick;
     //The mode types. Currently just flood but should be able to easily add more
     boolean floodMode=false;
+    
     //Menus. This is in one big array because it is so much cleaner like this
     final String[] MENU_NAMES={"Actions","Movement","Network","Help"};
     final String[][] MENU_ITEMS={{"Flood/Dry tiles"},{"Up","Left","Right","Down"},{"Save","Load","Create New","Change Resolution","Change Pipe Size"},{"Placing Pipes","Actions","Hotkeys"}};
@@ -67,6 +68,9 @@ public class main extends JFrame implements ActionListener, MouseListener
     final int HELP_CONSTANT=3;
     //I tried to use keyboard listener for movement but I couldn't get them working so I decided to use hotkeys
     final int MOVEMENT_AMOUNT=1;
+    
+    //The largest size avalible for any int
+    final int MAX_SIZE=7;//This is significantly smaller than the max size, however the user should not be exceding this value. The max size is exponentual, 10^MAX_SIZE
 
     //Save info
     final String SAVE_DIRECTORY=System.getProperty("user.dir")+"\\Saves\\";//This gets the location of the save file
@@ -106,14 +110,13 @@ public class main extends JFrame implements ActionListener, MouseListener
     final String INVALID_INPUT_MESSAGE="Invaild input, please try again!";
     //Message for when the user attempts to move out of the map
     final String INVALID_MOVEMENT_MESSAGE="This is outside the network!";
-    //Message for when the user attempts to input a value that is too large
+    //Generic message for when the user attempts to input a value that is too large
     final String[] TOO_LARGE_MESSAGE={"Selected size too large","This size is too large! \nPlease try again with a smaller size!"};
-    final int[] MAX_SIZE={499,999,9999};//This is the max size or else the user can input a value to large. These come in three sizes, Small, medium and large. 
     //Changing resolution
     final String[] RESOLUTION_X_MESSAGE={"Change Resolution","Please select the new width of the window!"};
     final String[] RESOLUTION_Y_MESSAGE={"Change Resolution","Please select the new height of the window!"};
     //Error messages if the new resolution/network size will break the program
-    final String[] RESOLUTION_SIZE_MESSAGE={"Resolution size too large","This size is too large! \nPlease try again with a smaller resolution or increase the size of the network!"};
+    final String[] RESOLUTION_SIZE_MESSAGE={"Resolution size too large","This size is too large! \nPlease try again with a smaller resolution or increase the size of the network!","This size is too large! \nPlease try again with a smaller resolution, the max resolution is: \n"," by "};
     final String[] NETWORK_SIZE_MESSAGE={"Network size too small","This size is too small! \nPlease try again with a larger network or decrease the resolution!"};
     final String[] SQUARE_SIZE_MESSAGE={"Square size too small","This size is too small! \nPlease try again with a larger network or decrease the resolution!"};
     final String[] LOAD_SIZE_MESSAGE={"Loaded Network size too small","The size this network is too small! \nPlease try again with a larger network or decrease the resolution!"};
@@ -393,10 +396,10 @@ public class main extends JFrame implements ActionListener, MouseListener
             boolean checkValidSize=true;
             while(checkValidSize){//This is not the cleanest way, but it is the fastest for me to make
                 //Keeps looping to request the new pipe size if they input an invalid case 
-                int tempXSize=convertStringInputToInt(NEW_NETWORK_X_MESSAGE,xSize+"",1);//using +"" rather than converting to string using function
+                int tempXSize=convertStringInputToInt(NEW_NETWORK_X_MESSAGE,xSize+"");//using +"" rather than converting to string using function
                 if(tempXSize>0){//I expalin this in changeResolution
                     //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
-                    int tempYSize=convertStringInputToInt(NEW_NETWORK_Y_MESSAGE,ySize+"",1);
+                    int tempYSize=convertStringInputToInt(NEW_NETWORK_Y_MESSAGE,ySize+"");
                     if(tempYSize>0){//Tests to see if it is blank, thus user clicked the 'x'. This is not a part of the other if because 
                         //then it would display the network size message if the 'x' was clicked. >0 because it shouldnt be less than 0 anyway
 
@@ -424,7 +427,7 @@ public class main extends JFrame implements ActionListener, MouseListener
     public void changeSquareSize(){
         boolean checkValidSize=true;
         while(checkValidSize){
-            int tempSquareSize=convertStringInputToInt(PIPE_SIZE_CHANGE_MESSAGE,squareSize+"",0);
+            int tempSquareSize=convertStringInputToInt(PIPE_SIZE_CHANGE_MESSAGE,squareSize+"");
             if(tempSquareSize>0){
                 if(checkNewNetworkSize(xSize,ySize,width,height,tempSquareSize)){
                     checkValidSize=false;
@@ -442,18 +445,23 @@ public class main extends JFrame implements ActionListener, MouseListener
         boolean checkValidSize=true;
         while(checkValidSize){
             //Keeps looping to request the new pipe size if they input an invalid case 
-            int tempWidth=convertStringInputToInt(RESOLUTION_X_MESSAGE,getWidth()+"",2);
+            int tempWidth=convertStringInputToInt(RESOLUTION_X_MESSAGE,getWidth()+"");
             if(tempWidth>0){//This needs to happen twice, as otherwise it would appear again if the user clicked 'x'
                 //Runs it twice because I dont have time to make two varibles which are used trhoughout the code into an array
-                int tempHeight=convertStringInputToInt(RESOLUTION_Y_MESSAGE,getHeight()+"",2);
+                int tempHeight=convertStringInputToInt(RESOLUTION_Y_MESSAGE,getHeight()+"");
                 //I explained this in the changeNetworkSize function. While I should have put this in the function itself, that would require me to rework the entire function, which would not be worth it
                 if(tempHeight>0){
                     //Checks to see if the size is valid
+                    Dimension screenMaxSize = Toolkit.getDefaultToolkit().getScreenSize();
                     if(checkNewNetworkSize(xSize,ySize,tempWidth,tempHeight,squareSize)){
+                        if(screenMaxSize.getHeight()>=tempHeight&&screenMaxSize.getWidth()>=tempWidth){
                         checkValidSize=false;
                         //Actually refinds them
                         height=tempHeight;
                         width=tempWidth;
+                    }else{
+                        checkValidSize=openBoolDialog(RESOLUTION_SIZE_MESSAGE[0],RESOLUTION_SIZE_MESSAGE[2]+screenMaxSize.getWidth()+RESOLUTION_SIZE_MESSAGE[3]+screenMaxSize.getHeight());
+                    }
                     }else{
                         checkValidSize=openBoolDialog(RESOLUTION_SIZE_MESSAGE[0],RESOLUTION_SIZE_MESSAGE[1]);//If they click no, then it closes the menu
                     }
@@ -471,10 +479,8 @@ public class main extends JFrame implements ActionListener, MouseListener
     //This is used to check if a new network or resolution size is large enough to avoid attempting to render non existant tiles. True means safe, false, means that the program would return an error
     public boolean checkNewNetworkSize(int newXSize,int newYSize,int newXResolution, int newYResolution, int newSquareSize){
         //Currently blank
-        if(newXSize*newSquareSize<newXResolution){//Checks to see if the new X is too large
-            return false;
-        }
-        if(newYSize*newSquareSize<newYResolution){//Checks to see if the new Y is too large
+        if(newXSize*newSquareSize<newXResolution//Checks to see if the new X or Y is too large
+        ||newYSize*newSquareSize<newYResolution){
             return false;
         }
         return true;//Assuming current methods, if it hasnt been triggered it should be safe.
@@ -714,17 +720,14 @@ public class main extends JFrame implements ActionListener, MouseListener
         int input=JOptionPane.showConfirmDialog(this,prompt,windowTitle,JOptionPane.YES_NO_OPTION);
         return (input==0);//This means it returns falsue unless yes was clicked
     }
-    //This ensures the input is valid. Valid means no non number characters (i.e. '2', yes, 'a', no, '.', no- this removes decimals) and >0 
-    public int convertStringInputToInt(String[] messages, String defaultText,int sizeLimit){//I ask for the entire message array because its better
+    //This ensures the input is valid. Valid means no non number characters (i.e. '2', yes, 'a', no, '.'- this removes decimals) and >0 
+    public int convertStringInputToInt(String[] messages, String defaultText){//I ask for the entire message array because its better
         String dialogInput=openDialog(messages[0], messages[1],defaultText);
-        while(!(dialogInput==null)){//Dont need a break statement as there is a return, ensures that it does not = null
-            if(dialogInput.matches("\\d+")){//Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad.
+        boolean validInput=!(dialogInput==null);//I am defining this here so it doesnt have to redefine this every time it loops
+        while(validInput){//Dont need a break statement as there is a return, ensures that it does not = null
+            if(dialogInput.matches("\\d+")&&dialogInput.length()<MAX_SIZE){//Efficent way to test to see if there is any non digit characters in a string, as try catch is really bad, or too large.
                 int temptInt=Integer.parseInt(dialogInput);
                 if(temptInt>0){//As all of the program requires the ints that are given by the user to be >1, this function will never accept 0<
-                    if(temptInt>MAX_SIZE[sizeLimit]){
-                        openBoolDialog(TOO_LARGE_MESSAGE[0],TOO_LARGE_MESSAGE[1]);
-                        return -1;//This uses the system for if the user clicks on the 'x', however they have the same outcome so this is fine
-                    }
                     return temptInt;
                 }
             }else{
@@ -737,10 +740,11 @@ public class main extends JFrame implements ActionListener, MouseListener
     public void save(){
         boolean cancelSave=false;//This is the boolean that allows the user to cancel saving if it already exists or decides against saving
         String fileName=openDialog(SAVE_MESSAGE[0], SAVE_MESSAGE[1], "");
-        if(fileName==null || fileName==""){//If the user cancels saving while giving it a name
+        if(fileName.matches("null")||fileName.matches("")){//If the user cancels saving while giving it a name
             cancelSave=true;
         }
         try{
+            System.out.println(fileName);
             File saveFile=new File (SAVE_DIRECTORY+fileName+SAVE_FILE_TYPE);
             //Check to ensure the user wishes to override the file
             if(!saveFile.createNewFile()){
