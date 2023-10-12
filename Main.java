@@ -2,7 +2,7 @@
  * Waterways project
  *
  * @Brendan Shaw
- * @v38 - 12/10
+ * @v39 - 13/10
  * 
  * This is the main function, where the frame is. 
  * 
@@ -59,9 +59,9 @@ public class Main extends JFrame implements ActionListener, MouseListener
     boolean floodMode=false;
     
     //Menus. This is in one big array because it is so much cleaner like this
-    final String[] MENU_NAMES={"Actions","Movement","Network","Help"};
-    final String[][] MENU_ITEMS={{"Flood/Dry tiles"},{"Up","Left","Right","Down"},{"Save","Load","Create New","Change Resolution","Change Pipe Size"},{"Placing Pipes","Actions","Hotkeys"}};
-    final char[][] MENU_SHORTCUT = {{'f'},{'w','a','d','s'},{'k','l','c','r','p'},{'h','h','h'}};//Need hotkeys for menus that should not have hotkeys. This would be an issue if not for majority of menus having a hotkey anyway. Solution was to give a double up of the h hotkey
+    final String[] MENU_NAMES={"Click Actions","Movement","Network","Help"};
+    final String[][] MENU_ITEMS={{"Flooding/Drying","Place Pipes"},{"Up","Left","Right","Down"},{"Save","Load","Create New","Change Resolution","Change Pipe Size"},{"Placing Pipes","Actions","Hotkeys"}};
+    final char[][] MENU_SHORTCUT = {{'f','g'},{'w','a','d','s'},{'k','l','c','r','p'},{'h','h','h'}};//Need hotkeys for menus that should not have hotkeys. This would be an issue if not for majority of menus having a hotkey anyway. Solution was to give a double up of the h hotkey
     final int ACTION_CONSTANT=0;
     final int MOVEMENT_CONSTANT=1;
     final int SAVE_CONSTANT=2;//There is likely a cleaner way to do this, however considering its purpose, it is fine
@@ -122,6 +122,8 @@ public class Main extends JFrame implements ActionListener, MouseListener
     //Generic error messages
     final String[] ERROR_MESSAGE={"Error","There was an error, please try again!"};
     final String FILE_ERROR_MESSAGE="There is a missing file!";
+    //Flood message
+    final String[] FLOOD_MODE_MESSAGE={"Placing pipes has been selected", "Flooding and drying has been selected"};
     //The help
     final String[] HELP_MESSAGE={"Help","To Place down a pipe, click on a tile on the grid. If you wish to place a line, drag across multiple tiles!",
             "To preform an action, click the action in the menu (or use the hotkey) and click on the tile you wish to preform the action on! \nYou need to click the action in the menu (or use the hotkey) to deactivate it!",
@@ -157,7 +159,7 @@ public class Main extends JFrame implements ActionListener, MouseListener
             }
             menuBar.add(menu);
         }
-
+        
         //Canvas init
         Canvas myGraphic=new Canvas();
         addMouseListener(this);
@@ -316,8 +318,11 @@ public class Main extends JFrame implements ActionListener, MouseListener
                 //I think I found an actual use for switchs
             case 0:
                 //It just toggles it. No need to test whether it is already enabled anymore
-                floodMode=!floodMode;
+                floodMode=true;
                 break;//The only action now is flooding but I am leaving this here for expanability
+            case 1:
+                floodMode=false;//Changes the flood mode to require to be turned on/off with a seperate funciton because users were often confused 
+                break;
             default:
                 //This is kept in the terminal because it should be impossible. I will likely remove it once I move the error messages to dialog boxes.
                 openBoolDialog(ERROR_MESSAGE[0],ERROR_MESSAGE[1]);
